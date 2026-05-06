@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Sparkles, User, Brain, Star, LogOut, BookOpen, Zap, TrendingUp, Settings, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
@@ -6,13 +6,16 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { supabase } from '../supabase';
-import { fetchGeminiResponse } from '../api/gemini';
 import './TutorChat.css';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import MobileBottomNav from './MobileBottomNav';
 
-// ─── Tezkor chip tugmalar ────────────────────────────────────────────────────
+// Custom Hooks
+import { useProfile } from '../hooks/useProfile';
+import { useMessages } from '../hooks/useMessages';
+import { useNotebook } from '../hooks/useNotebook';
+
 const QUICK_CHIPS = [
   { emoji: '🇬🇧', label: 'Ingliz zamonlari', desc: 'Zamonlar tahlili va misollar', prompt: 'Ingliz tili zamonlarini tushuntirib ber' },
   { emoji: '🇷🇺', label: 'Ruscha tarjima', desc: 'Matnlarni professional tarjima qilish', prompt: "Ushbu matnni rus tiliga tarjima qil: 'Salom, ahvollar qalay?'" },
@@ -24,173 +27,120 @@ const QUICK_CHIPS = [
 
 function TutorChat({ session }) {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState([]);
-  const [isTyping, setIsTyping] = useState(false);
-  const [credits, setCredits] = useState(0);
-  const [showCreditModal, setShowCreditModal] = useState(false);
-  const [notebook, setNotebook] = useState([]);
-  const [showNotebook, setShowNotebook] = useState(false);
-  const [quiz, setQuiz] = useState(null);
-  const [quizLoading, setQuizLoading] = useState(false);
-  const [totalMessages, setTotalMessages] = useState(0);
   const messagesEndRef = useRef(null);
+  const audioRef = useRef(null);
 
-  // ─── Boshlang'ich ma'lumotlarni yuklash ─────────────────────────────────
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      if (!session?.user?.id) return;
+  // TanStack Query Hooks
+  const { profile, decrementCredits } = useProfile(session);
+  const { messages, isSending, sendMessage, clearChat } = useMessages(session);
+  const { entries: notebook, saveEntry, deleteEntry } = useNotebook(session);
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('credits')
-        .eq('id', session.user.id)
-        .single();
-      if (profileData) setCredits(profileData.credits);
+  // Local UI State
+  const [showNotebook, setShowNotebook] = useState(false);
+  const [showCreditModal, setShowCreditModal] = useState(false);
+  const [quiz, setQuiz] = useState(null);
+  const [vibeMode, setVibeMode] = useState(false);
+  const [logoClicks, setLogoClicks] = useState(0);
 
-      const { data: msgData } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: true });
-
-      if (msgData) {
-        setMessages(msgData.map(m => ({ id: m.id, role: m.role, content: m.content, isNew: false })));
-        setTotalMessages(msgData.length);
+  const handleLogoClick = () => {
+    setLogoClicks(prev => {
+      if (prev + 1 >= 3) {
+        setVibeMode(!vibeMode);
+        return 0;
       }
+      return prev + 1;
+    });
+    // Reset clicks after 2 seconds
+    setTimeout(() => setLogoClicks(0), 2000);
+  };
 
-      const { data: notebookData } = await supabase
-        .from('notebook_entries')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false });
-      if (notebookData) setNotebook(notebookData);
-    };
+  useEffect(() => {
+    if (audioRef.current) {
+      if (vibeMode) {
+        audioRef.current.play().catch(e => console.log("Audio play blocked"));
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [vibeMode]);
 
-    fetchInitialData();
-  }, [session]);
+  const credits = profile?.credits || 0;
 
-  // ─── Auto scroll ─────────────────────────────────────────────────────────
+  // Auto scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+  }, [messages, isSending]);
 
-  // ─── Xabar yuborish ──────────────────────────────────────────────────────
-  const handleSend = useCallback(async (userText) => {
-    if (!userText?.trim() || isTyping || !session?.user?.id) return;
+  const handleSend = useCallback(async (userText, attachment = null) => {
+    if ((!userText?.trim() && !attachment) || isSending) return;
+
+    let mode = 'TUTOR';
+    let cleanText = userText;
+
+    const codingKeywords = ['kod', 'tuzib ber', 'qilib ber', 'dastur', 'yozib ber', 'tic-tac-toe', 'bird', 'o\'yin', 'website', 'sahifa'];
+    const isCodingRequest = codingKeywords.some(kw => userText?.toLowerCase().includes(kw));
+
+    // /vibe-coding buyrug'ini yoki kodlash so'rovini tekshirish
+    if (userText?.trim().toLowerCase().startsWith('/vibe-coding') || isCodingRequest) {
+      mode = 'CODER';
+      setVibeMode(true);
+      cleanText = userText.replace(/\/vibe-coding/i, '').trim();
+    } else {
+      setVibeMode(false);
+    }
 
     if (credits <= 0) { setShowCreditModal(true); return; }
 
-    const userId = session.user.id;
-    const newCredits = credits - 1;
-    setCredits(newCredits);
-
-    // Kreditni DB da kamaytirish
-    const { error: rpcErr } = await supabase.rpc('decrement_credits', { user_id: userId });
-    if (rpcErr) await supabase.from('profiles').update({ credits: newCredits }).eq('id', userId);
-
-    // UI ga user xabarini qo'shish
-    const tempUser = { id: `u-${Date.now()}`, role: 'user', content: userText };
-    setMessages(prev => [...prev, tempUser]);
-    setIsTyping(true);
-
-    // DB ga user xabarini saqlash
-    supabase.from('messages').insert([{ user_id: userId, role: 'user', content: userText }]).then();
-
-    // AI dan javob olish
-    const replyText = await fetchGeminiResponse(userText, messages);
-
-    // Kredit hisoblash (har 200 belgi = 1 kredit)
-    const cost = Math.max(1, Math.ceil(replyText.length / 200));
-    const finalBal = Math.max(0, newCredits - cost);
-    setCredits(finalBal);
-    supabase.from('profiles').update({ credits: finalBal }).eq('id', userId).then();
-
-    // UI ga AI xabarini qo'shish
-    const tempAI = { id: `a-${Date.now()}`, role: 'ai', content: replyText, isNew: true };
-    setMessages(prev => [...prev.map(m => ({ ...m, isNew: false })), tempAI]);
-    setTotalMessages(prev => prev + 2);
-    setIsTyping(false);
-
-    // DB ga AI xabarini saqlash
-    supabase.from('messages').insert([{ user_id: userId, role: 'ai', content: replyText }]).then();
-  }, [credits, isTyping, messages, session]);
-
-  // ─── Qayta yaratish ──────────────────────────────────────────────────────
-  const handleRegenerate = useCallback(async (msgId) => {
-    if (isTyping) return;
-    // Oxirgi user xabarini topish
-    const msgIndex = messages.findIndex(m => m.id === msgId);
-    const prevUser = [...messages].slice(0, msgIndex).reverse().find(m => m.role === 'user');
-    if (!prevUser) return;
-    // Shu AI xabarni olib tashlab qayta yuborish
-    setMessages(prev => prev.filter(m => m.id !== msgId));
-    await handleSend(prevUser.content);
-  }, [isTyping, messages, handleSend]);
-
-  // ─── Daftarga saqlash ────────────────────────────────────────────────────
-  const handleSaveToNotebook = useCallback(async (content) => {
-    if (!session?.user?.id) return;
-    const title = content.replace(/[#*`]/g, '').substring(0, 40).trim() + '…';
-
-    const { data, error } = await supabase
-      .from('notebook_entries')
-      .insert([{ user_id: session.user.id, title, content }])
-      .select()
-      .single();
-
-    if (!error && data) {
-      setNotebook(prev => [data, ...prev]);
-    }
-  }, [session]);
-
-  // ─── Suhbatni tozalash ───────────────────────────────────────────────────
-  const handleClearChat = useCallback(async () => {
-    if (!session?.user?.id || !window.confirm('Barcha xabarlarni o\'chirasizmi?')) return;
-    await supabase.from('messages').delete().eq('user_id', session.user.id);
-    setMessages([]);
-    setTotalMessages(0);
-    setQuiz(null);
-  }, [session]);
-
-  // ─── Quiz yaratish ───────────────────────────────────────────────────────
-  const handleStartQuiz = useCallback(async () => {
-    if (isTyping || messages.length < 2 || quizLoading) return;
-    setQuizLoading(true);
-
-    const quizPrompt = `Hozirgacha gaplashgan mavzularimiz asosida 5 ta ko'p variantli test yaratib ber.
-FAQAT quyidagi JSON formatida qaytar, boshqa hech narsa yozma:
-{"questions":[{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"answer":"TO'G'RI VARIANT TO'LIQ MATNI"}]}`;
-
-    const response = await fetchGeminiResponse(quizPrompt, messages);
     try {
-      const clean = response.replace(/```json|```/g, '').trim();
-      const data = JSON.parse(clean);
-      setQuiz({ questions: data.questions, active: true, currentIdx: 0, score: 0, feedback: null, finished: false });
-    } catch {
-      alert('Test yaratishda xatolik. Qaytadan urinib ko\'ring.');
+      await decrementCredits();
+      sendMessage({ userText: cleanText, currentMessages: messages, attachment, mode });
+    } catch (err) {
+      console.error('Xatolik:', err);
     }
-    setQuizLoading(false);
-  }, [isTyping, messages, quizLoading]);
+  }, [credits, isSending, messages, sendMessage, decrementCredits]);
 
-  const handleLogout = useCallback(async () => {
-    await supabase.auth.signOut();
-  }, []);
 
-  // ─── Kredit rangi ────────────────────────────────────────────────────────
-  const creditColor = credits > 20 ? '#10b981' : credits > 5 ? '#f59e0b' : '#ef4444';
+
+  const handleAutoFix = useCallback(async (brokenCode, errorMsg, lang) => {
+    if (isSending) return;
+    const fixPrompt = `[SYSTEM: AUTO-FIX REQUEST]\nUshbu kodda xatolik aniqlandi: "${errorMsg}". \nUni professional dasturchi sifatida tahlil qil va tuzatib, faqat to'liq va ishchi kodni qaytar.\n\nKOD:\n\`\`\`${lang}\n${brokenCode}\n\`\`\``;
+    
+    try {
+      await sendMessage({ userText: fixPrompt, currentMessages: messages });
+    } catch (err) {
+      console.error('Auto-fix error:', err);
+    }
+  }, [isSending, messages, sendMessage]);
+
+  const handleLogout = useCallback(() => supabase.auth.signOut(), []);
+
+  const handleClearChat = useCallback(() => {
+    if (window.confirm('Barcha xabarlarni o\'chirasizmi?')) {
+      clearChat();
+      setQuiz(null);
+    }
+  }, [clearChat]);
+
+  // UI helpers
+  const creditColor = useMemo(() => 
+    credits > 20 ? '#10b981' : credits > 5 ? '#f59e0b' : '#ef4444', 
+  [credits]);
 
   return (
-    <div className="tutor-layout">
+    <div className={`tutor-layout ${vibeMode ? 'vibe-active' : ''}`}>
+      {vibeMode && <VibeBackground />}
+      <audio ref={audioRef} loop src="https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Ketsa/Light_Reflections/Ketsa_-_08_-_The_Warmth_of_the_Sun.mp3" />
 
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <aside className="tutor-sidebar">
-        <div className="sidebar-brand">
-          <div className="brand-logo"><Brain size={20} /></div>
-          <h2>LingoAI Expert</h2>
-        </div>
+      {!vibeMode && (
+        <aside className="tutor-sidebar">
+          <div className="sidebar-brand" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
+            <div className="brand-logo"><Brain size={20} /></div>
+            <h2>LingoAI Expert</h2>
+          </div>
+
 
         <div className="sidebar-content">
-          {/* Kredit */}
           <div className="tutor-info-card highlighted">
             <h3>Kredit Balansi</h3>
             <div className="balans-value-group">
@@ -205,10 +155,9 @@ FAQAT quyidagi JSON formatida qaytar, boshqa hech narsa yozma:
             </div>
           </div>
 
-          {/* Statistika */}
           <div className="tutor-info-card" style={{ display: 'flex', gap: 12 }}>
             <div style={{ flex: 1, textAlign: 'center' }}>
-              <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff' }}>{Math.floor(totalMessages / 2)}</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff' }}>{Math.floor(messages.length / 2)}</div>
               <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 2 }}>Suhbat</div>
             </div>
             <div style={{ width: 1, background: 'rgba(255,255,255,0.08)' }} />
@@ -218,7 +167,6 @@ FAQAT quyidagi JSON formatida qaytar, boshqa hech narsa yozma:
             </div>
           </div>
 
-          {/* Notebook tugma */}
           <button
             className={`tutor-info-card notebook-toggle ${showNotebook ? 'active' : ''}`}
             onClick={() => setShowNotebook(v => !v)}
@@ -231,7 +179,6 @@ FAQAT quyidagi JSON formatida qaytar, boshqa hech narsa yozma:
             <p style={{ marginTop: 4, fontSize: '0.78rem', color: '#fff' }}>{notebook.length} ta konspekt saqlangan</p>
           </button>
 
-          {/* Suhbatni tozalash */}
           {messages.length > 0 && (
             <button className="clear-chat-btn" onClick={handleClearChat}>
               <Trash2 size={14} /> Suhbatni tozalash
@@ -252,6 +199,8 @@ FAQAT quyidagi JSON formatida qaytar, boshqa hech narsa yozma:
           </button>
         </div>
       </aside>
+      )}
+
 
       {/* ── Asosiy chat maydoni ──────────────────────────────────────────── */}
       <main className="tutor-main">
@@ -259,19 +208,13 @@ FAQAT quyidagi JSON formatida qaytar, boshqa hech narsa yozma:
           <div className="header-title">
             <h2>Til Tahlili va O'rganish</h2>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {quizLoading && <span style={{ fontSize: 12, color: '#94a3b8' }}>Test tayyorlanmoqda…</span>}
-            <div className="header-badge"><span>Professional Rejim</span></div>
-          </div>
+          <div className="header-badge"><span>Professional Rejim</span></div>
         </header>
 
         <div className="chat-messages">
-          {/* Welcome holati */}
           {messages.length === 0 ? (
             <div className="welcome-state fade-in">
-              <div className="welcome-icon-wrapper pulse">
-                <Sparkles size={48} />
-              </div>
+              <div className="welcome-icon-wrapper pulse"><Sparkles size={48} /></div>
               <h2>LingoAI Markaziga Xush Kelibsiz</h2>
               <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: 20 }}>
                 Har qanday savol bering — til, matematika, dasturlash yoki boshqa fanlar
@@ -294,160 +237,47 @@ FAQAT quyidagi JSON formatida qaytar, boshqa hech narsa yozma:
                 <ChatMessage
                   key={msg.id}
                   msg={msg}
-                  onSave={handleSaveToNotebook}
-                  onRegenerate={handleRegenerate}
+                  onSave={saveEntry}
+                  onAutoFix={handleAutoFix}
                 />
               ))}
-
-              {/* Quiz CTA — 4 ta xabardan keyin */}
-              {messages.length >= 4 && !isTyping && !quiz && (
-                <div className="quiz-start-cta fade-in">
-                  <button className="quiz-btn" onClick={handleStartQuiz} disabled={quizLoading}>
-                    <Star size={16} />
-                    {quizLoading ? 'Test tayyorlanmoqda…' : 'Mavzu bo\'yicha o\'zingni sinab ko\'r!'}
-                  </button>
-                </div>
-              )}
             </>
           )}
 
-          {/* Yozayapti indikatori */}
-          {isTyping && (
+          {isSending && (
             <div className="chat-bubble-wrapper ai fade-in">
               <div className="bubble-avatar ai-avatar"><Brain size={20} /></div>
-              <div className="chat-bubble ai typing-bubble">
-                <div className="typing-dot" /><div className="typing-dot" /><div className="typing-dot" />
+              <div className="chat-bubble ai typing-bubble" style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <div className="typing-dot" /><div className="typing-dot" /><div className="typing-dot" />
+                </div>
+                <div style={{ fontSize: '10px', color: '#6366f1', fontWeight: 600, letterSpacing: '0.05em' }}>
+                  MUHANDIS IShLAMOQDA...
+                </div>
               </div>
             </div>
           )}
-
           <div ref={messagesEndRef} />
         </div>
 
-        <ChatInput onSend={handleSend} isTyping={isTyping} />
+        <ChatInput onSend={handleSend} isTyping={isSending} />
         <MobileBottomNav credits={credits} onLogout={handleLogout} />
 
-        {/* ── Modal: Kredit tugadi ──────────────────────────────────────── */}
+        {/* ── Modals ────────────────────────────────────────────────────── */}
         {showCreditModal && (
           <div className="modal-overlay" onClick={() => setShowCreditModal(false)}>
             <div className="modal-content fade-in" onClick={e => e.stopPropagation()}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>💳</div>
               <h3>Kredit tugadi</h3>
-              <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: 20 }}>
-                Kredit paket sotib oling va davom eting.
-              </p>
+              <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: 20 }}>Kredit paket sotib oling va davom eting.</p>
               <div style={{ display: 'flex', gap: 10 }}>
-                <button className="modal-close-btn" onClick={() => setShowCreditModal(false)}>
-                  Yopish
-                </button>
-                <button style={{
-                  flex: 1, padding: '10px 20px', borderRadius: 10,
-                  background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-                  border: 'none', color: '#fff', fontWeight: 600, cursor: 'pointer',
-                }}>
-                  Kredit sotib olish
-                </button>
+                <button className="modal-close-btn" onClick={() => setShowCreditModal(false)}>Yopish</button>
+                <button className="buy-btn">Kredit sotib olish</button>
               </div>
             </div>
           </div>
         )}
 
-        {/* ── Modal: Quiz ───────────────────────────────────────────────── */}
-        {quiz?.active && (
-          <div className="modal-overlay" onClick={() => !quiz.finished && null}>
-            <div className="modal-content quiz-modal fade-in" onClick={e => e.stopPropagation()}>
-              {!quiz.finished ? (
-                <>
-                  <div className="quiz-header">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                      <h3 style={{ margin: 0 }}>Savol {quiz.currentIdx + 1}/{quiz.questions.length}</h3>
-                      <span style={{ fontSize: 13, color: '#10b981', fontWeight: 600 }}>
-                        {quiz.score} to'g'ri
-                      </span>
-                    </div>
-                    <div className="quiz-progress-bar">
-                      <div className="progress-fill" style={{ width: `${((quiz.currentIdx + 1) / quiz.questions.length) * 100}%` }} />
-                    </div>
-                  </div>
-
-                  <div className="quiz-question">
-                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
-                      {quiz.questions[quiz.currentIdx].question}
-                    </ReactMarkdown>
-                  </div>
-
-                  <div className="quiz-options">
-                    {quiz.questions[quiz.currentIdx].options.map((opt, idx) => {
-                      const isSelected = quiz.feedback?.selectedOption === opt;
-                      const isCorrect = opt.trim() === quiz.questions[quiz.currentIdx].answer.trim();
-                      const statusClass = quiz.feedback
-                        ? isCorrect ? 'correct' : isSelected ? 'wrong' : ''
-                        : '';
-                      return (
-                        <button
-                          key={idx}
-                          className={`quiz-option ${statusClass}`}
-                          disabled={!!quiz.feedback}
-                          onClick={() => {
-                            const correct = opt.trim() === quiz.questions[quiz.currentIdx].answer.trim();
-                            setQuiz(prev => ({
-                              ...prev,
-                              feedback: { selectedOption: opt, isCorrect: correct },
-                              score: correct ? prev.score + 1 : prev.score,
-                            }));
-                          }}
-                        >
-                          <ReactMarkdown>{opt}</ReactMarkdown>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {quiz.feedback && (
-                    <div className={`quiz-feedback-banner ${quiz.feedback.isCorrect ? 'correct' : 'wrong'} slide-up`}>
-                      <p>
-                        {quiz.feedback.isCorrect
-                          ? '✅ To\'g\'ri!'
-                          : `❌ Xato! Javob: ${quiz.questions[quiz.currentIdx].answer}`}
-                      </p>
-                      <button className="next-quiz-btn" onClick={() => {
-                        const next = quiz.currentIdx + 1;
-                        if (next < quiz.questions.length) {
-                          setQuiz(prev => ({ ...prev, currentIdx: next, feedback: null }));
-                        } else {
-                          setQuiz(prev => ({ ...prev, finished: true }));
-                        }
-                      }}>
-                        {quiz.currentIdx + 1 < quiz.questions.length ? 'Keyingi →' : 'Natijani ko\'r'}
-                      </button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="quiz-results-screen">
-                  <div style={{ fontSize: 60, marginBottom: 16 }}>
-                    {quiz.score === quiz.questions.length ? '🏆' : quiz.score >= quiz.questions.length / 2 ? '🎯' : '📚'}
-                  </div>
-                  <h2>Natija: {quiz.score}/{quiz.questions.length}</h2>
-                  <p style={{ color: '#94a3b8', marginBottom: 20 }}>
-                    {quiz.score === quiz.questions.length ? 'Mukammal! Zo\'r natija!' : quiz.score >= quiz.questions.length / 2 ? 'Yaxshi! Davom eting!' : 'Yana o\'rganing va qaytadan urining!'}
-                  </p>
-                  <div style={{ display: 'flex', gap: 10 }}>
-                    <button className="modal-close-btn" onClick={() => setQuiz(null)}>Yopish</button>
-                    <button
-                      style={{ flex: 1, padding: '10px 20px', borderRadius: 10, background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', border: 'none', color: '#fff', fontWeight: 600, cursor: 'pointer' }}
-                      onClick={() => setQuiz(prev => ({ ...prev, currentIdx: 0, score: 0, feedback: null, finished: false }))}
-                    >
-                      Qayta ishlash
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ── Notebook panel ────────────────────────────────────────────── */}
         {showNotebook && (
           <div className="notebook-panel fade-in">
             <div className="notebook-header">
@@ -464,15 +294,7 @@ FAQAT quyidagi JSON formatida qaytar, boshqa hech narsa yozma:
                 notebook.map(note => (
                   <div key={note.id} className="note-card">
                     <h4>{note.title}</h4>
-                    <button
-                      className="delete-note"
-                      onClick={async () => {
-                        await supabase.from('notebook_entries').delete().eq('id', note.id);
-                        setNotebook(prev => prev.filter(n => n.id !== note.id));
-                      }}
-                    >
-                      O'chirish
-                    </button>
+                    <button className="delete-note" onClick={() => deleteEntry(note.id)}>O'chirish</button>
                   </div>
                 ))
               )}
@@ -483,5 +305,48 @@ FAQAT quyidagi JSON formatida qaytar, boshqa hech narsa yozma:
     </div>
   );
 }
+
+// ─── Vibe Background (Engine Vizualizatsiyasi) ──────────────────────────────
+const VibeBackground = () => (
+  <div className="vibe-engine-bg">
+    <div className="vibe-core" />
+    <div className="vibe-particles" />
+    <style jsx>{`
+      .vibe-engine-bg {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background: radial-gradient(circle at center, #020617 0%, #000 100%);
+        overflow: hidden;
+      }
+      .vibe-core {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 150vw;
+        height: 150vh;
+        background: radial-gradient(circle at center, rgba(99, 102, 241, 0.08) 0%, transparent 60%);
+        animation: pulseCore 8s infinite alternate ease-in-out;
+      }
+      @keyframes pulseCore {
+        from { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+        to { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
+      }
+      .vibe-particles {
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        background-size: 50px 50px;
+        opacity: 0.3;
+        animation: driftParticles 40s linear infinite;
+      }
+      @keyframes driftParticles {
+        from { background-position: 0 0; }
+        to { background-position: 1000px 1000px; }
+      }
+    `}</style>
+  </div>
+);
 
 export default TutorChat;

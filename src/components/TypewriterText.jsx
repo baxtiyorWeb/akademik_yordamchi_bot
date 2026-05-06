@@ -8,7 +8,7 @@ const TypewriterText = ({ text, components }) => {
   const [displayedText, setDisplayedText] = useState('');
   const [isDone, setIsDone] = useState(false);
   const timerRef = useRef(null);
-  
+
   // Matn o'zgarganda hamma narsani tozalash
   useEffect(() => {
     if (!text) return;
@@ -16,11 +16,11 @@ const TypewriterText = ({ text, components }) => {
     // Reset state
     setDisplayedText('');
     setIsDone(false);
-    
+
     if (timerRef.current) clearInterval(timerRef.current);
 
     let index = 0;
-    const speed = text.length > 500 ? 5 : 12; // Uzun matnlarni tezroq yozish
+    const speed = 100; // Tezlangan, lekin silliq harflab yozish
 
     timerRef.current = setInterval(() => {
       index++;
@@ -33,44 +33,31 @@ const TypewriterText = ({ text, components }) => {
       }
     }, speed);
 
+
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [text]);
 
   // Render qilinadigan matnni tanlash
-  // Yozish tugallanguncha oddiy matn, tugagach Markdown
   return (
     <div className="typewriter-container">
-      {!isDone ? (
-        <div style={{ whiteSpace: 'pre-wrap', color: '#cbd5e1' }}>
-          {displayedText}
-          <span className="typewriter-cursor">|</span>
-        </div>
-      ) : (
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkMath]}
-          rehypePlugins={[rehypeKatex]}
-          components={components}
-        >
-          {text}
-        </ReactMarkdown>
-      )}
-      
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+        components={components}
+      >
+        {displayedText + (!isDone ? ' ●' : '')}
+      </ReactMarkdown>
+
       <style jsx>{`
-        .typewriter-cursor {
-          display: inline-block;
-          width: 2px;
-          background: #3b82f6;
-          margin-left: 2px;
-          animation: blink 0.7s infinite;
-        }
-        @keyframes blink {
-          50% { opacity: 0; }
-        }
+        .typewriter-container :global(p) { display: inline; }
+        .typewriter-container :global(p:last-child) { display: inline; }
       `}</style>
     </div>
   );
 };
+
 
 export default React.memo(TypewriterText);

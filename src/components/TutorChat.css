@@ -7,9 +7,15 @@
   display: flex;
   width: 100vw;
   height: 100vh;
-  background: #020617;
+  background-color: #0f172a;
   color: #f8fafc;
+  overflow: hidden;
   font-family: 'Inter', 'Poppins', sans-serif;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tutor-layout.vibe-active {
+  background: transparent;
 }
 
 /* ── SIDEBAR ── */
@@ -22,6 +28,25 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+}
+
+.tutor-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #020617;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+}
+
+.vibe-active .tutor-main {
+  background: transparent;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+  height: 100vh;
 }
 
 /* ── Brand ── */
@@ -523,8 +548,153 @@
 }
 
 .input-wrapper textarea::placeholder {
-  color: #1e293b;
+  color: #475569;
 }
+
+.tool-button {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.tool-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+.tool-button.active {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  animation: pulseMic 1.5s infinite;
+}
+
+@keyframes pulseMic {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.attachment-preview {
+  max-width: 860px;
+  margin: 0 auto 10px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+}
+
+.preview-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.image-thumbnail {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #000;
+}
+
+.image-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.file-info {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #818cf8;
+}
+
+.preview-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.file-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-size {
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+.remove-attachment {
+  background: rgba(239, 68, 68, 0.1);
+  border: none;
+  color: #ef4444;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  transition: all 0.2s;
+}
+
+.remove-attachment:hover {
+  background: #ef4444;
+  color: #fff;
+}
+
+
+/* ── Tables Styling ── */
+.chat-bubble table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 15px 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.chat-bubble th {
+  background: rgba(99, 102, 241, 0.1);
+  color: #818cf8;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border-bottom: 2px solid rgba(99, 102, 241, 0.2);
+}
+
+.chat-bubble td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.9rem;
+}
+
+.chat-bubble tr:last-child td {
+  border-bottom: none;
+}
+
 
 .send-button {
   width: 40px;
@@ -970,3 +1140,10 @@
     top: 0;
   }
 }
+.vibe-active .tutor-header { background: transparent !important; border-bottom: 1px solid rgba(255,255,255,0.05) !important; }
+.vibe-active .chat-input-area { background: transparent !important; }
+.vibe-active .chat-messages { padding: 40px 20px !important; }
+
+@keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+.vibe-editor.autonomous.ready { animation: border-glow 2s infinite; }
+@keyframes border-glow { 0% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.2); } 50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.5); } 100% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.2); } }
