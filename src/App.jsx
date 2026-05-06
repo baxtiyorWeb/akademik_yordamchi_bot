@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { supabase } from './supabase';
+import LandingPage from './components/LandingPage';
 import AuthPage from './components/AuthPage';
 import TutorChat from './components/TutorChat';
+import ProfilePage from './components/ProfilePage';
 import './App.css';
 
 function App() {
@@ -38,13 +40,18 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route
-          path="/"
+          path="/login"
           element={!session ? <AuthPage setSession={setSession} /> : <Navigate to="/tutor" />}
         />
         <Route
           path="/tutor"
-          element={session ? <TutorChat session={session} /> : <Navigate to="/" />}
+          element={session ? <TutorChat session={session} /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/profile"
+          element={session ? <ProfilePage session={session} /> : <Navigate to="/login" />}
         />
       </Routes>
     </BrowserRouter>

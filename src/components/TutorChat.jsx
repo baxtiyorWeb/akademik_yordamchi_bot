@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Sparkles, User, Brain, Star, LogOut, BookOpen, Zap, TrendingUp } from 'lucide-react';
+import { Sparkles, User, Brain, Star, LogOut, BookOpen, Zap, TrendingUp, Settings, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -22,6 +23,7 @@ const QUICK_CHIPS = [
 ];
 
 function TutorChat({ session }) {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [credits, setCredits] = useState(0);
@@ -190,11 +192,16 @@ FAQAT quyidagi JSON formatida qaytar, boshqa hech narsa yozma:
         <div className="sidebar-content">
           {/* Kredit */}
           <div className="tutor-info-card highlighted">
-            <h3>Balans</h3>
-            <h2 style={{ color: creditColor }}>{credits}</h2>
-            <p style={{ fontSize: '0.75rem', color: '#64748b' }}>xizmat krediti</p>
-            <div style={{ marginTop: 8, height: 4, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${Math.min(100, (credits / 50) * 100)}%`, background: creditColor, borderRadius: 4, transition: 'width 0.4s ease' }} />
+            <h3>Kredit Balansi</h3>
+            <div className="balans-value-group">
+              <h2 style={{ color: creditColor }}>{credits}</h2>
+              <span className="balans-badge">Kredit</span>
+            </div>
+            <div className="balans-progress-bg">
+              <div
+                className="balans-progress-fill"
+                style={{ width: `${Math.min(100, (credits / 50) * 100)}%`, background: creditColor }}
+              />
             </div>
           </div>
 
@@ -221,29 +228,27 @@ FAQAT quyidagi JSON formatida qaytar, boshqa hech narsa yozma:
               <BookOpen size={16} style={{ color: '#f59e0b' }} />
               <h3 style={{ margin: 0 }}>Aqlli Daftar</h3>
             </div>
-            <p style={{ marginTop: 4, fontSize: '0.78rem' }}>{notebook.length} ta konspekt saqlangan</p>
+            <p style={{ marginTop: 4, fontSize: '0.78rem', color: '#fff' }}>{notebook.length} ta konspekt saqlangan</p>
           </button>
 
           {/* Suhbatni tozalash */}
           {messages.length > 0 && (
-            <button onClick={handleClearChat} style={{
-              width: '100%', padding: '8px 12px', borderRadius: 10,
-              background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)',
-              color: '#ef4444', fontSize: '0.78rem', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center',
-            }}>
-              Suhbatni tozalash
+            <button className="clear-chat-btn" onClick={handleClearChat}>
+              <Trash2 size={14} /> Suhbatni tozalash
             </button>
           )}
         </div>
 
         <div className="sidebar-footer">
-          <div className="user-profile">
-            <div className="user-avatar"><User size={20} /></div>
-            <div className="user-email">{session?.user?.email?.split('@')[0] || 'Foydalanuvchi'}</div>
+          <div className="user-profile-nav" onClick={() => navigate('/profile')}>
+            <div className="user-avatar"><User size={18} /></div>
+            <div className="user-info">
+              <span className="user-name">{session?.user?.email?.split('@')[0]}</span>
+              <span className="user-status">Profilni ko'rish</span>
+            </div>
           </div>
           <button className="logout-btn" onClick={handleLogout} title="Chiqish">
-            <LogOut size={20} />
+            <LogOut size={18} />
           </button>
         </div>
       </aside>

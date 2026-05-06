@@ -1,79 +1,73 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
-  --primary: #6366f1; /* Modern Indigo */
-  --primary-glow: rgba(99, 102, 241, 0.5);
-  --secondary: #8b5cf6; /* Violet */
-  --accent: #10b981; /* Emerald */
-  --bg-main: #020617; /* Deepest blue/black */
-  --sidebar-bg: #0f172a;
-  --card-bg: rgba(30, 41, 59, 0.5);
-  --border-color: rgba(255, 255, 255, 0.08);
+  --primary: #6366f1;
+  --primary-light: #818cf8;
+  --primary-glow: rgba(99, 102, 241, 0.35);
+  --secondary: #8b5cf6;
+  --accent: #10b981;
+  --bg-main: #020617;
+  --sidebar-bg: #080f1e;
+  --card-bg: rgba(15, 23, 42, 0.8);
+  --border-color: rgba(255, 255, 255, 0.07);
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
+  --text-faint: #475569;
+  --text-hint: #334155;
   --glass: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --radius-sm: 8px;
-  --radius-md: 14px;
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --radius: 12px;
+  --radius-md: 16px;
   --radius-lg: 20px;
+  --pad-sm: 12px;
+  --pad-md: 18px;
 }
 
-* {
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 body {
-  margin: 0;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Inter', 'Poppins', sans-serif;
   color: var(--text-main);
   background: var(--bg-main);
   min-height: 100vh;
   display: flex;
   overflow: hidden;
-  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
 }
 
 #root {
   display: flex;
   width: 100vw;
   height: 100vh;
+  overflow: hidden;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-weight: 600;
-  letter-spacing: -0.01em;
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
-::-webkit-scrollbar {
-  width: 4px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
+  background: rgba(99, 102, 241, 0.25);
+  border-radius: 99px;
 }
 
 .fade-in {
-  animation: fadeIn 0.3s ease-out forwards;
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
