@@ -96,6 +96,16 @@ const ChatInput = React.memo(({ onSend, isTyping }) => {
           value={localInput}
           onChange={(e) => setLocalInput(e.target.value)}
           onKeyDown={handleKeyDown}
+          onPaste={(e) => {
+            const items = e.clipboardData.items;
+            for (let i = 0; i < items.length; i++) {
+              if (items[i].type.indexOf('image') !== -1) {
+                const blob = items[i].getAsFile();
+                setAttachment(blob);
+                break;
+              }
+            }
+          }}
           rows={1}
         />
 

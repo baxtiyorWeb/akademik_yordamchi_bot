@@ -25,31 +25,33 @@ const Mermaid = ({ chart }) => {
       const cleanChart = chart.trim()
         .replace(/^```mermaid\n?/, '')
         .replace(/\n?```$/, '')
+        .replace(/^mermaid\n?/, '') // Ba'zan AI ichida ham 'mermaid' deb yozadi
         .trim();
 
       // Har bir render uchun noyob ID, dmermaid prefixini ishlatmaymiz (CSS bloklashi uchun)
       const id = 'vibe-diag-' + Math.random().toString(36).substr(2, 9);
       
       try {
-        // Avvalgi tarkibni tozalash
         if (ref.current) ref.current.innerHTML = '';
         
-        // Render funksiyasini ehtiyotkorlik bilan chaqiramiz
-        mermaid.render(id, cleanChart).then((result) => {
+        // Ensure mermaid is initialized (redundant but safe)
+        mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+
+        mermaid.render(id, cleanChart).then(({ svg }) => {
           if (ref.current) {
-            ref.current.innerHTML = result.svg;
-            const svg = ref.current.querySelector('svg');
-            if (svg) {
-              svg.style.maxWidth = '100%';
-              svg.style.height = 'auto';
+            ref.current.innerHTML = svg;
+            const svgElement = ref.current.querySelector('svg');
+            if (svgElement) {
+              svgElement.style.maxWidth = '100%';
+              svgElement.style.height = 'auto';
             }
           }
         }).catch((err) => {
-          // Xatolikni faqat lokal Console'da ko'rsatamiz
-          console.warn('Mermaid render issue caught.');
-          setError('Diagramma sintaksisida xatolik bor (Console tahlil qilinmoqda)');
+          console.warn('Mermaid render issue caught:', err);
+          setError('Diagramma sintaksisida xatolik bor.');
         });
       } catch (err) {
+        console.error('Mermaid render error:', err);
         setError('Diagrammani chizishda ichki xatolik.');
       }
     }
@@ -66,7 +68,7 @@ const Mermaid = ({ chart }) => {
           <code>{`> Error detected in Mermaid syntax.`}</code>
           <code>{`> Check the source code for invalid tokens.`}</code>
         </div>
-        <style jsx>{`
+        <style>{`
           .diag-console {
             margin: 10px 0;
             background: #020617;

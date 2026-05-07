@@ -13,14 +13,15 @@ const MODELS = {
 };
 
 const SYSTEM_PROMPTS = {
-  TUTOR: `Sen 'LingoAI Academic Expert' - kuchli akademik yordamchi va tilshunos san. 
-Muloqot uslubing: Do'stona, tushunarli va professional. 
-Vazifang: 
-- Savollarga akademik nuqtai nazardan javob berish.
-- Til o'rganishda yordam berish (grammatika, tarjima, tahlil).
-- Murakkab mavzularni (matematika, fizika va h.k.) sodda tilda tushuntirish.
-- LaTeX va Mermaid diagrammalaridan foydalanish.
-Muhim: Kod yozishda faqat tushuntirish ber va misollar ko'rsat, lekin avtonom muhandislik qilma.`,
+  TUTOR: `Sen 'LingoAI Academic Expert' - professional akademik yordamchi san.
+Vazifang: Matematika, Fizika, Kimyo va Til o'rganish bo'yicha eng yuqori darajadagi tushuntirishlarni berish.
+
+MUHIM QOIDALAR:
+1. Texnik cheklovlar haqida gapirish taqiqlanadi: Hech qachon "Mermaid xatosi", "texnik nosozlik" yoki "sintaksis" haqida foydalanuvchiga tushuntirish berma. Xato bo'lsa, shunchaki boshqa usulda (matn yoki jadval) javob ber.
+2. Aniq fanlar: Har doim LaTeX ($...$) ishlat. Yechimlarni mantiqiy va qadamba-qadam tushuntir. Mermaid ishlatganda sintaksisga (qo'shtirnoqlar va standart graph TD) juda ehtiyot bo'l.
+3. Til o'rganish: Jadvallar va misollardan keng foydalan.
+4. Muloqot: Do'stona, professional va motivatsiyaga boy bo'lsin. Har bir javob oxirida qiziqarli fakt yoki savol qoldir.
+Muhim: Kod yozishda faqat tushuntirish ber, avtonom muhandislik qilma (buning uchun /vibe-coding bor).`,
 
   CODER: `Sen 'Vibe Coding Agent' - 2026-yilning eng ilg'or avtonom muhandisi san.
 Vazifang: Foydalanuvchiga hech qanday ko'rsatma bermasdan, ishni to'liq va avtonom bajarib berish.
@@ -54,10 +55,12 @@ export async function streamGeminiResponse(prompt, history = [], attachment = nu
     }
   }
 
-  const sanitizedHistory = history.map(m => ({
-    role: m.role === 'ai' ? 'model' : 'user',
-    parts: [{ text: m.content || '' }]
-  }));
+  const sanitizedHistory = history
+    .filter(m => m.content && m.content.trim() !== "")
+    .map(m => ({
+      role: m.role === 'ai' ? 'model' : 'user',
+      parts: [{ text: m.content }]
+    }));
 
   const payload = {
     system_instruction: { parts: [{ text: system }] },
@@ -72,29 +75,34 @@ export async function streamGeminiResponse(prompt, history = [], attachment = nu
       body: JSON.stringify(payload),
     });
 
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error?.message || `HTTP error ${response.status}`);
+    }
+
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let fullText = "";
+    let buffer = "";
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
-      const chunk = decoder.decode(value);
-      const lines = chunk.split("\n");
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
 
       for (const line of lines) {
         if (line.startsWith("data: ")) {
           try {
             const data = JSON.parse(line.substring(6));
-            const textChunk = data.candidates[0].content.parts[0].text;
+            const textChunk = data.candidates?.[0]?.content?.parts?.[0]?.text;
             if (textChunk) {
               fullText += textChunk;
               onChunk(fullText);
             }
-          } catch (e) {
-            // JSON qismlarga bo'linib qolgan bo'lishi mumkin
-          }
+          } catch (e) { }
         }
       }
     }
@@ -116,10 +124,12 @@ export async function fetchGeminiResponse(prompt, history = [], attachment = nul
     currentParts.push({ inline_data: { mime_type: attachment.type, data: b64.split(',')[1] } });
   }
 
-  const sanitizedHistory = history.map(m => ({
-    role: m.role === 'ai' ? 'model' : 'user',
-    parts: [{ text: m.content || '' }]
-  }));
+  const sanitizedHistory = history
+    .filter(m => m.content && m.content.trim() !== "")
+    .map(m => ({
+      role: m.role === 'ai' ? 'model' : 'user',
+      parts: [{ text: m.content }]
+    }));
 
   const payload = {
     system_instruction: { parts: [{ text: system }] },

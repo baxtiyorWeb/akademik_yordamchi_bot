@@ -54,7 +54,7 @@ const VibeSandbox = ({ code, language }) => {
         width="100%"
         height="300px"
       />
-      <style jsx>{`
+      <style>{`
         .vibe-sandbox-wrapper {
           margin: 15px 0;
           border-radius: 12px;

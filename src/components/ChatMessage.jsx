@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import rehypeRaw from 'rehype-raw';
 import { Brain, Star, Copy, Check, Volume2, RotateCcw, ChevronDown, ChevronUp, Code, BookOpen, Calculator, Languages } from 'lucide-react';
 import TypewriterText from './TypewriterText';
 import Mermaid from './Mermaid';
@@ -81,7 +82,7 @@ const ChatMessage = React.memo(({ msg, onSave, onRegenerate, onAutoFix }) => {
               <span>{lang.toUpperCase()}</span>
             </div>
             <pre><code>{codeStr}</code></pre>
-            <style jsx>{`
+            <style>{`
               .static-code-block {
                 background: #0f172a;
                 border: 1px solid rgba(255,255,255,0.05);
@@ -124,7 +125,7 @@ const ChatMessage = React.memo(({ msg, onSave, onRegenerate, onAutoFix }) => {
     tr: ({ children }) => <tr style={{ transition: 'background 0.15s' }}>{children}</tr>,
     blockquote: ({ children }) => <blockquote style={{ borderLeft: '3px solid #3b82f6', margin: '10px 0', paddingLeft: 14, color: '#94a3b8', fontStyle: 'italic' }}>{children}</blockquote>,
     h1: ({ children }) => <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '16px 0 8px', color: '#f1f5f9' }}>{children}</h1>,
-    p: ({ children }) => <p style={{ margin: '6px 0', lineHeight: 1.7, color: '#cbd5e1' }}>{children}</p>,
+    p: ({ children }) => <div style={{ margin: '6px 0', lineHeight: 1.7, color: '#cbd5e1' }}>{children}</div>,
     ul: ({ children }) => <ul style={{ paddingLeft: 20, margin: '10px 0' }}>{children}</ul>,
     li: ({ children }) => <li style={{ marginBottom: 4 }}>{children}</li>,
   }), [msg.isNew, onAutoFix, phases]);
@@ -156,7 +157,7 @@ const ChatMessage = React.memo(({ msg, onSave, onRegenerate, onAutoFix }) => {
           {isAI && msg.isNew && phases.length === 0 ? (
             <TypewriterText text={cleanContent} components={mdComponents} />
           ) : isAI ? (
-            <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={mdComponents}>{cleanContent}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex, rehypeRaw]} components={mdComponents}>{cleanContent}</ReactMarkdown>
           ) : (
             <p style={{ margin: 0, lineHeight: 1.6 }}>{content}</p>
           )}

@@ -8,7 +8,7 @@ const VibeBackground = () => {
       <div className="aurora aurora-3"></div>
       <div className="aurora aurora-4"></div>
       
-      <style jsx>{`
+      <style>{`
         .vibe-container {
           position: fixed;
           top: 0;

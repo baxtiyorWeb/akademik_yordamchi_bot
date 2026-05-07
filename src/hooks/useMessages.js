@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
-import { fetchGeminiResponse } from '../api/gemini';
+import { fetchGeminiResponse, streamGeminiResponse } from '../api/gemini';
 
 export const useMessages = (session) => {
   const queryClient = useQueryClient();

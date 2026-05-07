@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import rehypeRaw from 'rehype-raw';
 
 const TypewriterText = ({ text, components }) => {
   const [displayedText, setDisplayedText] = useState('');
@@ -45,13 +46,13 @@ const TypewriterText = ({ text, components }) => {
     <div className="typewriter-container">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex]}
+        rehypePlugins={[rehypeKatex, rehypeRaw]}
         components={components}
       >
         {displayedText + (!isDone ? ' ●' : '')}
       </ReactMarkdown>
 
-      <style jsx>{`
+      <style>{`
         .typewriter-container :global(p) { display: inline; }
         .typewriter-container :global(p:last-child) { display: inline; }
       `}</style>

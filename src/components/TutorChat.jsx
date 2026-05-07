@@ -129,7 +129,7 @@ function TutorChat({ session }) {
   return (
     <div className={`tutor-layout ${vibeMode ? 'vibe-active' : ''}`}>
       {vibeMode && <VibeBackground />}
-      <audio ref={audioRef} loop src="https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Ketsa/Light_Reflections/Ketsa_-_08_-_The_Warmth_of_the_Sun.mp3" />
+      <audio ref={audioRef} loop src="https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3" />
 
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
       {!vibeMode && (
@@ -252,7 +252,7 @@ function TutorChat({ session }) {
                   <div className="typing-dot" /><div className="typing-dot" /><div className="typing-dot" />
                 </div>
                 <div style={{ fontSize: '10px', color: '#6366f1', fontWeight: 600, letterSpacing: '0.05em' }}>
-                  MUHANDIS IShLAMOQDA...
+                  {vibeMode ? 'MUHANDIS IShLAMOQDA...' : 'PROFESSOR JAVOB BERMOQDA...'}
                 </div>
               </div>
             </div>
@@ -311,7 +311,7 @@ const VibeBackground = () => (
   <div className="vibe-engine-bg">
     <div className="vibe-core" />
     <div className="vibe-particles" />
-    <style jsx>{`
+    <style>{`
       .vibe-engine-bg {
         position: fixed;
         inset: 0;

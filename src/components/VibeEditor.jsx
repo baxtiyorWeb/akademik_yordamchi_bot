@@ -102,7 +102,7 @@ const VibeEditor = ({ code, language, isNew, onAgentError }) => {
         />
       </div>
 
-      <style jsx>{`
+      <style>{`
         .vibe-editor-minimal {
           background: #020617;
           border: 1px solid rgba(255,255,255,0.08);
