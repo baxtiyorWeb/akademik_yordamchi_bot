@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Sparkles, User, Brain, Star, LogOut, BookOpen, Zap, TrendingUp, Settings, Trash2 } from 'lucide-react';
+import { Sparkles, User, Brain, Star, LogOut, BookOpen, Zap, TrendingUp, Settings, Trash2, Sigma } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -10,6 +10,7 @@ import './TutorChat.css';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import MobileBottomNav from './MobileBottomNav';
+import { toast } from 'sonner';
 
 // Custom Hooks
 import { useProfile } from '../hooks/useProfile';
@@ -23,6 +24,7 @@ const QUICK_CHIPS = [
   { emoji: '📐', label: 'Matematika', desc: 'Murakkab misollar yechimi', prompt: 'Kvadrat tenglamani yechishni tushuntirib ber' },
   { emoji: '💻', label: 'Dasturlash', desc: 'Kod yozish va xatolarni tuzatish', prompt: 'Python da funksiyalar haqida misollar bilan tushuntir' },
   { emoji: '📖', label: 'Referat yozish', desc: 'Akademik mavzularda maqolalar', prompt: 'Sun\'iy intellekt haqida qisqa referat yoz' },
+  { emoji: '📄', label: 'PDF tayyorlash', desc: 'Mavzuni PDF ga eksport qilish', prompt: 'Menga biror mavzuda PDF fayl tayyorlab ber' },
 ];
 
 function TutorChat({ session }) {
@@ -39,6 +41,8 @@ function TutorChat({ session }) {
   const [showNotebook, setShowNotebook] = useState(false);
   const [showCreditModal, setShowCreditModal] = useState(false);
   const [quiz, setQuiz] = useState(null);
+  const [selectedAnswers, setSelectedAnswers] = useState({});
+  const [showResults, setShowResults] = useState(false);
   const [vibeMode, setVibeMode] = useState(false);
   const [logoClicks, setLogoClicks] = useState(0);
 
@@ -89,6 +93,14 @@ function TutorChat({ session }) {
       setVibeMode(false);
     }
 
+    const quizKeywords = ['test tuz', 'savol ber', 'bilimimni tekshir', 'quiz qil', 'savollar tuz', 'test ber'];
+    const isQuizRequest = quizKeywords.some(kw => userText?.toLowerCase().includes(kw));
+
+    if (isQuizRequest) {
+      handleGenerateQuiz();
+      return;
+    }
+
     if (credits <= 0) { setShowCreditModal(true); return; }
 
     try {
@@ -104,13 +116,48 @@ function TutorChat({ session }) {
   const handleAutoFix = useCallback(async (brokenCode, errorMsg, lang) => {
     if (isSending) return;
     const fixPrompt = `[SYSTEM: AUTO-FIX REQUEST]\nUshbu kodda xatolik aniqlandi: "${errorMsg}". \nUni professional dasturchi sifatida tahlil qil va tuzatib, faqat to'liq va ishchi kodni qaytar.\n\nKOD:\n\`\`\`${lang}\n${brokenCode}\n\`\`\``;
-    
+
     try {
       await sendMessage({ userText: fixPrompt, currentMessages: messages });
     } catch (err) {
       console.error('Auto-fix error:', err);
     }
   }, [isSending, messages, sendMessage]);
+
+  const handleGenerateQuiz = useCallback(async () => {
+    if (isSending || messages.length < 2) return;
+
+    const quizPrompt = `[SYSTEM: QUIZ GENERATION]\nSuhbat tarixidan kelib chiqib foydalanuvchi bilimini tekshirish uchun 3 ta qiziqarli test (multiple choice) savoli tuz. \nJavobni FAQAT JSON formatida quyidagicha qaytar:\n[{"question": "...", "options": ["A", "B", "C", "D"], "correct": 0, "explanation": "..."}]`;
+
+    const loadingId = toast.loading('Savollar tayyorlanmoqda...');
+    try {
+      const { fetchGeminiResponse } = await import('../api/gemini');
+      const response = await fetchGeminiResponse(quizPrompt, messages, null, 'TUTOR');
+
+      const jsonMatch = response.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const parsedQuiz = JSON.parse(jsonMatch[0]);
+        setQuiz(parsedQuiz);
+        setSelectedAnswers({});
+        setShowResults(false);
+        toast.success('Test tayyor!', { id: loadingId });
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      }
+    } catch (err) {
+      toast.error('Xatolik yuz berdi', { id: loadingId });
+      console.error('Quiz generation error:', err);
+    }
+  }, [isSending, messages]);
+
+  const handleAnalyzeQuiz = useCallback(async () => {
+    if (!quiz || !showResults) return;
+
+    const analysisPrompt = `Ushbu test natijalarini tahlil qiling:\n${quiz.map((q, i) => `Savol: ${q.question}\nBerilgan javob: ${q.options[selectedAnswers[i]]}\nTo'g'ri javob: ${q.options[q.correct]}`).join('\n\n')}\n\nFoydalanuvchiga xatolarini tushuntiring va tavsiyalar bering.`;
+
+    setQuiz(null);
+    setShowResults(false);
+    sendMessage({ userText: analysisPrompt, currentMessages: messages });
+  }, [quiz, showResults, selectedAnswers, messages, sendMessage]);
 
   const handleLogout = useCallback(() => supabase.auth.signOut(), []);
 
@@ -122,9 +169,9 @@ function TutorChat({ session }) {
   }, [clearChat]);
 
   // UI helpers
-  const creditColor = useMemo(() => 
-    credits > 20 ? '#10b981' : credits > 5 ? '#f59e0b' : '#ef4444', 
-  [credits]);
+  const creditColor = useMemo(() =>
+    credits > 20 ? '#10b981' : credits > 5 ? '#f59e0b' : '#ef4444',
+    [credits]);
 
   return (
     <div className={`tutor-layout ${vibeMode ? 'vibe-active' : ''}`}>
@@ -140,65 +187,90 @@ function TutorChat({ session }) {
           </div>
 
 
-        <div className="sidebar-content">
-          <div className="tutor-info-card highlighted">
-            <h3>Kredit Balansi</h3>
-            <div className="balans-value-group">
-              <h2 style={{ color: creditColor }}>{credits}</h2>
-              <span className="balans-badge">Kredit</span>
+          <div className="sidebar-content">
+            <div className="tutor-info-card highlighted">
+              <h3>Kredit Balansi</h3>
+              <div className="balans-value-group">
+                <h2 style={{ color: creditColor }}>{credits}</h2>
+                <span className="balans-badge">Kredit</span>
+              </div>
+              <div className="balans-progress-bg">
+                <div
+                  className="balans-progress-fill"
+                  style={{ width: `${Math.min(100, (credits / 50) * 100)}%`, background: creditColor }}
+                />
+              </div>
             </div>
-            <div className="balans-progress-bg">
-              <div
-                className="balans-progress-fill"
-                style={{ width: `${Math.min(100, (credits / 50) * 100)}%`, background: creditColor }}
-              />
-            </div>
-          </div>
 
-          <div className="tutor-info-card" style={{ display: 'flex', gap: 12 }}>
-            <div style={{ flex: 1, textAlign: 'center' }}>
-              <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff' }}>{Math.floor(messages.length / 2)}</div>
-              <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 2 }}>Suhbat</div>
+            <div className="tutor-info-card" style={{ display: 'flex', gap: 12 }}>
+              <div style={{ flex: 1, textAlign: 'center' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff' }}>{Math.floor(messages.length / 2)}</div>
+                <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 2 }}>Suhbat</div>
+              </div>
+              <div style={{ width: 1, background: 'rgba(255,255,255,0.08)' }} />
+              <div style={{ flex: 1, textAlign: 'center' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff' }}>{notebook.length}</div>
+                <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 2 }}>Konspekt</div>
+              </div>
             </div>
-            <div style={{ width: 1, background: 'rgba(255,255,255,0.08)' }} />
-            <div style={{ flex: 1, textAlign: 'center' }}>
-              <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff' }}>{notebook.length}</div>
-              <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 2 }}>Konspekt</div>
-            </div>
-          </div>
 
-          <button
-            className={`tutor-info-card notebook-toggle ${showNotebook ? 'active' : ''}`}
-            onClick={() => setShowNotebook(v => !v)}
-            style={{ width: '100%', textAlign: 'left', cursor: 'pointer' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <BookOpen size={16} style={{ color: '#f59e0b' }} />
-              <h3 style={{ margin: 0 }}>Aqlli Daftar</h3>
-            </div>
-            <p style={{ marginTop: 4, fontSize: '0.78rem', color: '#fff' }}>{notebook.length} ta konspekt saqlangan</p>
-          </button>
-
-          {messages.length > 0 && (
-            <button className="clear-chat-btn" onClick={handleClearChat}>
-              <Trash2 size={14} /> Suhbatni tozalash
+            <button
+              className={`tutor-info-card notebook-toggle ${showNotebook ? 'active' : ''}`}
+              onClick={() => setShowNotebook(v => !v)}
+              style={{ width: '100%', textAlign: 'left', cursor: 'pointer' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <BookOpen size={16} style={{ color: '#f59e0b' }} />
+                <h3 style={{ margin: 0 }}>Aqlli Daftar</h3>
+              </div>
+              <p style={{ marginTop: 4, fontSize: '0.78rem', color: '#fff' }}>{notebook.length} ta konspekt saqlangan</p>
             </button>
-          )}
-        </div>
 
-        <div className="sidebar-footer">
-          <div className="user-profile-nav" onClick={() => navigate('/profile')}>
-            <div className="user-avatar"><User size={18} /></div>
-            <div className="user-info">
-              <span className="user-name">{session?.user?.email?.split('@')[0]}</span>
-              <span className="user-status">Profilni ko'rish</span>
-            </div>
+            <button
+              className="tutor-info-card"
+              onClick={handleGenerateQuiz}
+              disabled={messages.length < 2 || isSending}
+              style={{ width: '100%', textAlign: 'left', cursor: 'pointer', opacity: messages.length < 2 ? 0.5 : 1 }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Zap size={16} style={{ color: '#8b5cf6' }} />
+                <h3 style={{ margin: 0 }}>Bilimni sinash</h3>
+              </div>
+              <p style={{ marginTop: 4, fontSize: '0.78rem', color: '#94a3b8' }}>Mavzu bo'yicha AI test tuzadi</p>
+            </button>
+
+            <button
+              className="tutor-info-card"
+              onClick={() => navigate('/math')}
+              style={{ width: '100%', textAlign: 'left', cursor: 'pointer', border: '1px solid rgba(139, 92, 246, 0.3)', background: 'rgba(139, 92, 246, 0.05)' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Sigma size={16} style={{ color: '#a78bfa' }} />
+                <h3 style={{ margin: 0, color: '#a78bfa' }}>Matematika Markazi</h3>
+              </div>
+              <p style={{ marginTop: 4, fontSize: '0.78rem', color: '#94a3b8' }}>Formula va Word bilan ishlash</p>
+            </button>
+
+            {messages.length > 0 && (
+              <button className="clear-chat-btn" onClick={handleClearChat}>
+                <Trash2 size={14} /> Suhbatni tozalash
+              </button>
+            )}
           </div>
-          <button className="logout-btn" onClick={handleLogout} title="Chiqish">
-            <LogOut size={18} />
-          </button>
-        </div>
-      </aside>
+
+          <div className="sidebar-footer">
+            <div className="user-profile-nav" onClick={() => navigate('/profile')}>
+              <div className="user-avatar"><User size={18} /></div>
+              <div className="user-info">
+                <span className="user-name">{session?.user?.email?.split('@')[0]}</span>
+                <span className="user-status">Profilni ko'rish</span>
+              </div>
+            </div>
+            <button className="logout-btn" onClick={handleLogout} title="Chiqish">
+              <LogOut size={18} />
+            </button>
+          </div>
+        </aside>
       )}
 
 
@@ -233,30 +305,100 @@ function TutorChat({ session }) {
             </div>
           ) : (
             <>
-              {messages.map((msg) => (
+              {messages.map((msg, idx) => (
                 <ChatMessage
                   key={msg.id}
                   msg={msg}
+                  previousMsg={idx > 0 ? messages[idx - 1] : null}
                   onSave={saveEntry}
                   onAutoFix={handleAutoFix}
                 />
               ))}
+
+              {quiz && (
+                <div className="quiz-section fade-in">
+                  <div className="quiz-header">
+                    <Sparkles size={20} color="#fbbf24" />
+                    <h3>Bilimingizni sinab ko'ring!</h3>
+                  </div>
+                  <div className="quiz-list">
+                    {quiz.map((q, idx) => {
+                      const isSelected = selectedAnswers[idx] !== undefined;
+                      const isCorrect = selectedAnswers[idx] === q.correct;
+
+                      return (
+                        <div key={idx} className="quiz-item" style={{ opacity: showResults && !isCorrect ? 0.8 : 1 }}>
+                          <div className="quiz-question">
+                            <strong>{idx + 1}.</strong>
+                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                              {q.question}
+                            </ReactMarkdown>
+                          </div>
+                          <div className="quiz-options">
+                            {q.options.map((opt, oIdx) => {
+                              const isThisSelected = selectedAnswers[idx] === oIdx;
+                              let btnStyle = {};
+
+                              if (showResults) {
+                                if (oIdx === q.correct) btnStyle = { background: 'rgba(16, 185, 129, 0.2)', borderColor: '#10b981', color: '#10b981' };
+                                else if (isThisSelected) btnStyle = { background: 'rgba(239, 68, 68, 0.2)', borderColor: '#ef4444', color: '#ef4444' };
+                              } else if (isThisSelected) {
+                                btnStyle = { background: 'rgba(99, 102, 241, 0.2)', borderColor: '#6366f1', color: '#fff' };
+                              }
+
+                              return (
+                                <button
+                                  key={oIdx}
+                                  className="quiz-opt-btn"
+                                  disabled={showResults}
+                                  style={btnStyle}
+                                  onClick={() => {
+                                    setSelectedAnswers(prev => ({ ...prev, [idx]: oIdx }));
+                                  }}
+                                >
+                                  <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]} components={{ p: 'span' }}>
+                                    {opt}
+                                  </ReactMarkdown>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {showResults && (
+                            <div className="quiz-explanation" style={{ marginTop: 10, fontSize: '0.8rem', color: isCorrect ? '#10b981' : '#94a3b8' }}>
+                              {isCorrect ? '✅ To\'g\'ri!' : `❌ Xato. To'g'ri javob: ${q.options[q.correct]}`}
+                              <p style={{ marginTop: 4, fontStyle: 'italic' }}>{q.explanation}</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {!showResults ? (
+                    <button
+                      className="quiz-close"
+                      disabled={Object.keys(selectedAnswers).length < quiz.length}
+                      onClick={() => {
+                        setShowResults(true);
+                        const correctCount = quiz.filter((q, i) => selectedAnswers[i] === q.correct).length;
+                        toast.info(`Siz ${quiz.length} tadan ${correctCount} tasiga to'g'ri javob berdingiz!`);
+                      }}
+                      style={{ opacity: Object.keys(selectedAnswers).length < quiz.length ? 0.5 : 1 }}
+                    >
+                      Natijalarni ko'rish
+                    </button>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+                      <button className="quiz-close" onClick={handleAnalyzeQuiz} style={{ flex: 1, margin: 0 }}>Tahlil qilish</button>
+                      <button className="quiz-close" onClick={() => setQuiz(null)} style={{ flex: 1, margin: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>Yopish</button>
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
 
-          {isSending && (
-            <div className="chat-bubble-wrapper ai fade-in">
-              <div className="bubble-avatar ai-avatar"><Brain size={20} /></div>
-              <div className="chat-bubble ai typing-bubble" style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <div className="typing-dot" /><div className="typing-dot" /><div className="typing-dot" />
-                </div>
-                <div style={{ fontSize: '10px', color: '#6366f1', fontWeight: 600, letterSpacing: '0.05em' }}>
-                  {vibeMode ? 'MUHANDIS IShLAMOQDA...' : 'PROFESSOR JAVOB BERMOQDA...'}
-                </div>
-              </div>
-            </div>
-          )}
+
           <div ref={messagesEndRef} />
         </div>
 

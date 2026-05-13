@@ -63,9 +63,8 @@ export const useMessages = (session) => {
       await queryClient.cancelQueries({ queryKey: ['messages', userId] });
       const previousMessages = queryClient.getQueryData(['messages', userId]);
 
-      const attachmentPreview = attachment && attachment.type.startsWith('image/') 
-        ? URL.createObjectURL(attachment) 
-        : null;
+      const attachmentUrl = attachment ? URL.createObjectURL(attachment) : null;
+      const attachmentType = attachment ? attachment.type : null;
 
       queryClient.setQueryData(['messages', userId], (old = []) => [
         ...old,
@@ -73,7 +72,8 @@ export const useMessages = (session) => {
           id: `temp-u-${Date.now()}`, 
           role: 'user', 
           content: userText, 
-          attachment: attachmentPreview,
+          attachment: attachmentUrl,
+          attachmentType: attachmentType,
           isNew: false 
         }
       ]);

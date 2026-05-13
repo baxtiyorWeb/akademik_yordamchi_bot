@@ -44,7 +44,7 @@ export const useProfile = (session) => {
   // Kreditni RPC orqali kamaytirish (xavfsizroq)
   const decrementCreditsMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc('decrement_credits', { user_id: userId });
+      const { error } = await supabase.rpc('decrement_credits', { user_id: userId, amount: 1 });
       if (error) throw error;
     },
     onSuccess: () => {

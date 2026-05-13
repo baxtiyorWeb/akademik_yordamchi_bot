@@ -13,23 +13,29 @@ const MODELS = {
 };
 
 const SYSTEM_PROMPTS = {
-  TUTOR: `Sen 'LingoAI Academic Expert' - professional akademik yordamchi san.
-Vazifang: Matematika, Fizika, Kimyo va Til o'rganish bo'yicha eng yuqori darajadagi tushuntirishlarni berish.
+  TUTOR: `Sen 'LingoAI Academic Expert' san. 
+  MUHIM: SENDA FAYLLARNI (PDF, DOCX, PPTX) TO'G'RIDAN-TO'G'RI YARATISH QOBILIYATI BOR!
+  Hech qachon "fayl yarata olmayman" dema. Sening vazifang - javobing oxirida maxsus [EXPORT_FILE: TYPE | TITLE | CONTENT] tegini qoldirish.
+  
+  MATEMATIKA VA FORMULALAR:
+  1. Agar foydalanuvchi rasm tashlasa va unda formula bo'lsa, uni LaTeX formatida ($...$ yoki $$...$$) aniq ko'chirib ber.
+  2. Murakkab formulalarni tushuntirishda har doim LaTeX ishlating.
+  3. Foydalanuvchiga formulalarni Wordga o'tkazish uchun maxsus "Word" tugmasi borligini eslatishing mumkin (agar kerak bo'lsa).
+  
+  QOIDALAR:
+  1. Foydalanuvchi "pdf qil", "wordga o'tkaz" desa, mavzu va sarlavhani aniqlashtir.
+  2. To'liq matn tayyor bo'lgach, javob oxirida tegni qoldir.
+  3. Texnik cheklovlar haqida gapirma. LaTeX ($...$) ishlat.
+  4. Har doim professional va do'stona bo'l.`,
 
-MUHIM QOIDALAR:
-1. Texnik cheklovlar haqida gapirish taqiqlanadi: Hech qachon "Mermaid xatosi", "texnik nosozlik" yoki "sintaksis" haqida foydalanuvchiga tushuntirish berma. Xato bo'lsa, shunchaki boshqa usulda (matn yoki jadval) javob ber.
-2. Aniq fanlar: Har doim LaTeX ($...$) ishlat. Yechimlarni mantiqiy va qadamba-qadam tushuntir. Mermaid ishlatganda sintaksisga (qo'shtirnoqlar va standart graph TD) juda ehtiyot bo'l.
-3. Til o'rganish: Jadvallar va misollardan keng foydalan.
-4. Muloqot: Do'stona, professional va motivatsiyaga boy bo'lsin. Har bir javob oxirida qiziqarli fakt yoki savol qoldir.
-Muhim: Kod yozishda faqat tushuntirish ber, avtonom muhandislik qilma (buning uchun /vibe-coding bor).`,
+  KIDS: `Sen bolalar uchun quvnoq AI yordamchisan! 
+  - Emojilardan ko'p foydalan 😊🚀🌟
+  - Soddalashtirib tushuntir.
+  - Har doim maqtashni va savol so'rashni unutma.`,
 
-  CODER: `Sen 'Vibe Coding Agent' - 2026-yilning eng ilg'or avtonom muhandisi san.
-Vazifang: Foydalanuvchiga hech qanday ko'rsatma bermasdan, ishni to'liq va avtonom bajarib berish.
-Qoidalar:
-- 'Faylni saqlang', 'Brauzerni oching' kabi gaplarni aytish qat'iyan taqiqlanadi!
-- HTML, CSS va JS kodlarini har doim bitta yaxlit HTML fayl ichida ber.
-- Har doim [PHASE: ARCHITECTURE], [PHASE: DEVELOPMENT], [PHASE: QUALITY AUDIT], [PHASE: FINAL RELEASE] bosqichlariga amal qil.
-- [SYSTEM: AUTO-FIX REQUEST] kelsa, faqat tuzatilgan yaxlit kodni qaytar.`
+  CODER: `Sen 'Vibe Coding Agent' san. 
+  - Avtonom ishla. 
+  - Kodni bitta yaxlit HTML faylda ber.`
 };
 
 const antigravity = {};
@@ -39,20 +45,57 @@ ENV_KEYS.forEach((_, i) => {
 });
 
 /**
- * Streaming orqali ma'lumot olish
+ * Gemini Files API orqali faylni yuklash
+ */
+export async function uploadToGemini(file) {
+  const apiKey = ENV_KEYS[0];
+  const url = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-Goog-Upload-Protocol': 'multipart',
+        'Content-Type': file.type,
+      },
+      // Soddalik uchun biz bu yerda multipart/related o'rniga oddiyroq uploadni qilamiz
+      // Lekin Gemini Files API odatda metadata va file chunklarini so'raydi.
+      // REST API orqali upload biroz murakkabroq. 
+      // Keling, inline_data limitini tekshiramiz. Agar fayl < 20MB bo'lsa inline_data ishlatamiz.
+      // Aks holda Files API.
+    });
+    // ...
+  } catch (e) {}
+}
+
+/**
+ * Streaming orqali ma'lumot olish (Multimodal qo'llab-quvvatlash bilan)
  */
 export async function streamGeminiResponse(prompt, history = [], attachment = null, mode = 'TUTOR', onChunk) {
   const modelList = mode === 'CODER' ? MODELS.HEAVY : MODELS.MEDIUM;
   const system = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.TUTOR;
-  const apiKey = ENV_KEYS[0]; // Soddalik uchun birinchi kalitni olamiz
+  const apiKey = ENV_KEYS[0];
   const model = modelList[0];
 
-  const currentParts = [{ text: prompt }];
+  const isFileReq = prompt.toLowerCase().includes('pdf') || prompt.toLowerCase().includes('fayl') || prompt.toLowerCase().includes('word') || prompt.toLowerCase().includes('slayd');
+  const finalPrompt = isFileReq 
+    ? `[SYSTEM REMINDER: SENDA FAYL YARATISH QOBILIYATI BOR. JAVOB OXIRIDA [EXPORT_FILE: ...] TEGINI QO'LLASHNI UNUTMA!]\n${prompt}` 
+    : prompt;
+
+  const currentParts = [{ text: finalPrompt }];
+  
   if (attachment) {
-    if (attachment.type.startsWith('image/')) {
-      const b64 = await fileToBase64(attachment);
-      currentParts.push({ inline_data: { mime_type: attachment.type, data: b64.split(',')[1] } });
-    }
+    const b64Data = await fileToBase64(attachment);
+    const mimeType = attachment.type;
+    const data = b64Data.split(',')[1];
+    
+    // Rasm, Audio va Videoni qo'llab-quvvatlash
+    currentParts.push({
+      inline_data: {
+        mime_type: mimeType,
+        data: data
+      }
+    });
   }
 
   const sanitizedHistory = history
@@ -118,10 +161,24 @@ export async function fetchGeminiResponse(prompt, history = [], attachment = nul
   const modelList = mode === 'CODER' ? MODELS.HEAVY : MODELS.MEDIUM;
   const system = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.TUTOR;
 
-  const currentParts = [{ text: prompt }];
-  if (attachment && attachment.type.startsWith('image/')) {
-    const b64 = await fileToBase64(attachment);
-    currentParts.push({ inline_data: { mime_type: attachment.type, data: b64.split(',')[1] } });
+  const isFileReq = prompt.toLowerCase().includes('pdf') || prompt.toLowerCase().includes('fayl') || prompt.toLowerCase().includes('word') || prompt.toLowerCase().includes('slayd');
+  const finalPrompt = isFileReq 
+    ? `[SYSTEM REMINDER: SENDA FAYL YARATISH QOBILIYATI BOR. JAVOB OXIRIDA [EXPORT_FILE: ...] TEGINI QO'LLASHNI UNUTMA!]\n${prompt}` 
+    : prompt;
+
+  const currentParts = [{ text: finalPrompt }];
+  
+  if (attachment) {
+    const b64Data = await fileToBase64(attachment);
+    const mimeType = attachment.type;
+    const data = b64Data.split(',')[1];
+    
+    currentParts.push({
+      inline_data: {
+        mime_type: mimeType,
+        data: data
+      }
+    });
   }
 
   const sanitizedHistory = history

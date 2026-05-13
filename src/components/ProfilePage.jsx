@@ -15,9 +15,16 @@ function ProfilePage({ session }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ messages: 0, notebook: 0 });
+  const [dynamicData, setDynamicData] = useState({
+    subjects: { language: 0, math: 0, coding: 0, writing: 0 },
+    achievements: { solver: false, coder: false, polyglot: false },
+    activity: [0, 0, 0, 0, 0, 0, 0],
+    todaySpent: 0,
+    totalSpent: 0
+  });
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchProfileAndData = async () => {
       if (!session?.user?.id) return;
       
       const { data: profileData } = await supabase
@@ -28,21 +35,71 @@ function ProfilePage({ session }) {
       
       if (profileData) setProfile(profileData);
 
-      const { count: msgCount } = await supabase
-        .from('messages')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', session.user.id);
-
-      const { count: noteCount } = await supabase
+      const { data: notebookData } = await supabase
         .from('notebook_entries')
-        .select('*', { count: 'exact', head: true })
+        .select('id')
         .eq('user_id', session.user.id);
 
-      setStats({ messages: msgCount || 0, notebook: noteCount || 0 });
+      const { data: messagesData } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('user_id', session.user.id);
+
+      const messages = messagesData || [];
+      const notebookCount = notebookData ? notebookData.length : 0;
+      
+      // Calculate Dynamic Data
+      let lang = 0, math = 0, coding = 0, writing = 0;
+      let todaySpent = 0;
+      const totalSpent = messages.length;
+      const activity = [0, 0, 0, 0, 0, 0, 0]; // Mon to Sun
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      messages.forEach(msg => {
+        const text = (msg.content || '').toLowerCase();
+        
+        // Subject categorization
+        if (text.match(/ingliz|rus|tarjima|grammar|til|ielts/)) lang++;
+        if (text.match(/matematika|misol|tenglama|math|qo'shish/)) math++;
+        if (text.match(/kod|python|javascript|html|css|vibe-coding|dastur/)) coding++;
+        if (text.match(/insho|referat|maqola|essay|yozish/)) writing++;
+
+        // Activity chart (Day of week)
+        const msgDate = new Date(msg.created_at);
+        const dayIdx = msgDate.getDay() === 0 ? 6 : msgDate.getDay() - 1; // 0=Mon, 6=Sun
+        activity[dayIdx]++;
+
+        // Today spent
+        if (msgDate >= today) todaySpent++;
+      });
+
+      // Percentages (max 100)
+      const totalSub = lang + math + coding + writing || 1;
+      const subjects = {
+        language: Math.min(100, Math.round((lang / totalSub) * 100) + (lang > 0 ? 20 : 0)),
+        math: Math.min(100, Math.round((math / totalSub) * 100) + (math > 0 ? 20 : 0)),
+        coding: Math.min(100, Math.round((coding / totalSub) * 100) + (coding > 0 ? 20 : 0)),
+        writing: Math.min(100, Math.round((writing / totalSub) * 100) + (writing > 0 ? 20 : 0))
+      };
+
+      const achievements = {
+        solver: math >= 5,
+        coder: coding >= 1,
+        polyglot: lang >= 5
+      };
+
+      // Normalize activity for chart height
+      const maxAct = Math.max(...activity, 1);
+      const normalizedActivity = activity.map(val => Math.round((val / maxAct) * 100));
+
+      setDynamicData({ subjects, achievements, activity: normalizedActivity, todaySpent, totalSpent });
+      setStats({ messages: messages.length, notebook: notebookCount });
       setLoading(false);
     };
 
-    fetchProfile();
+    fetchProfileAndData();
   }, [session]);
 
   const handleLogout = async () => {
@@ -160,30 +217,30 @@ function ProfilePage({ session }) {
                     <div className="sub-item">
                       <div className="sub-header">
                         <div className="sub-title"><Globe size={16} color="#6366f1" /> Til O'rganish</div>
-                        <span className="sub-pct">75%</span>
+                        <span className="sub-pct">{dynamicData.subjects.language}%</span>
                       </div>
-                      <div className="sub-bar-bg"><div className="sub-bar-fill" style={{ width: '75%', background: '#6366f1' }} /></div>
+                      <div className="sub-bar-bg"><div className="sub-bar-fill" style={{ width: `${dynamicData.subjects.language}%`, background: '#6366f1' }} /></div>
                     </div>
                     <div className="sub-item">
                       <div className="sub-header">
                         <div className="sub-title"><Calculator size={16} color="#10b981" /> Matematika</div>
-                        <span className="sub-pct">40%</span>
+                        <span className="sub-pct">{dynamicData.subjects.math}%</span>
                       </div>
-                      <div className="sub-bar-bg"><div className="sub-bar-fill" style={{ width: '40%', background: '#10b981' }} /></div>
+                      <div className="sub-bar-bg"><div className="sub-bar-fill" style={{ width: `${dynamicData.subjects.math}%`, background: '#10b981' }} /></div>
                     </div>
                     <div className="sub-item">
                       <div className="sub-header">
                         <div className="sub-title"><Code2 size={16} color="#3b82f6" /> Dasturlash</div>
-                        <span className="sub-pct">90%</span>
+                        <span className="sub-pct">{dynamicData.subjects.coding}%</span>
                       </div>
-                      <div className="sub-bar-bg"><div className="sub-bar-fill" style={{ width: '90%', background: '#3b82f6' }} /></div>
+                      <div className="sub-bar-bg"><div className="sub-bar-fill" style={{ width: `${dynamicData.subjects.coding}%`, background: '#3b82f6' }} /></div>
                     </div>
                     <div className="sub-item">
                       <div className="sub-header">
                         <div className="sub-title"><PenTool size={16} color="#f59e0b" /> Akademik Yozish</div>
-                        <span className="sub-pct">25%</span>
+                        <span className="sub-pct">{dynamicData.subjects.writing}%</span>
                       </div>
-                      <div className="sub-bar-bg"><div className="sub-bar-fill" style={{ width: '25%', background: '#f59e0b' }} /></div>
+                      <div className="sub-bar-bg"><div className="sub-bar-fill" style={{ width: `${dynamicData.subjects.writing}%`, background: '#f59e0b' }} /></div>
                     </div>
                   </div>
                 </div>
@@ -195,25 +252,25 @@ function ProfilePage({ session }) {
                     <Award size={18} className="icon-award" />
                   </div>
                   <div className="achievements-list">
-                    <div className="ach-item unlocked">
-                      <div className="ach-icon gold"><Zap size={16} /></div>
+                    <div className={`ach-item ${dynamicData.achievements.solver ? 'unlocked' : 'locked'}`}>
+                      <div className={`ach-icon ${dynamicData.achievements.solver ? 'gold' : ''}`}><Zap size={16} /></div>
                       <div className="ach-info">
                         <strong>Tezkor Yechimchi</strong>
-                        <span>10 ta matematika masalasi yechildi</span>
+                        <span>5 ta matematika masalasi yechildi</span>
                       </div>
                     </div>
-                    <div className="ach-item unlocked">
-                      <div className="ach-icon blue"><Code2 size={16} /></div>
+                    <div className={`ach-item ${dynamicData.achievements.coder ? 'unlocked' : 'locked'}`}>
+                      <div className={`ach-icon ${dynamicData.achievements.coder ? 'blue' : ''}`}><Code2 size={16} /></div>
                       <div className="ach-info">
                         <strong>Junior Coder</strong>
                         <span>Birinchi Python kodi yozildi</span>
                       </div>
                     </div>
-                    <div className="ach-item locked">
-                      <div className="ach-icon purple"><Globe size={16} /></div>
+                    <div className={`ach-item ${dynamicData.achievements.polyglot ? 'unlocked' : 'locked'}`}>
+                      <div className={`ach-icon ${dynamicData.achievements.polyglot ? 'purple' : ''}`}><Globe size={16} /></div>
                       <div className="ach-info">
                         <strong>Poliglot</strong>
-                        <span>3 ta tilda savol berildi</span>
+                        <span>5 ta tilda savol berildi</span>
                       </div>
                     </div>
                   </div>
@@ -237,12 +294,12 @@ function ProfilePage({ session }) {
                   </div>
                   <div className="wallet-stats">
                     <div className="w-stat">
-                      <span>Bugun ishlatildi</span>
-                      <strong>2,500</strong>
+                      <span>Bugun yozildi</span>
+                      <strong>{dynamicData.todaySpent} xabar</strong>
                     </div>
                     <div className="w-stat">
                       <span>Jami sarf</span>
-                      <strong>125,000</strong>
+                      <strong>{dynamicData.totalSpent} xabar</strong>
                     </div>
                   </div>
                 </div>
@@ -256,7 +313,7 @@ function ProfilePage({ session }) {
                   <div className="activity-chart">
                     {['Du', 'Se', 'Cho', 'Pa', 'Ju', 'Sha', 'Ya'].map((day, i) => (
                       <div key={day} className="act-bar-wrapper">
-                        <div className="act-bar" style={{ height: `${[40, 70, 45, 90, 65, 30, 20][i]}%`, opacity: i === 3 ? 1 : 0.4 }} />
+                        <div className="act-bar" style={{ height: `${dynamicData.activity[i]}%`, opacity: dynamicData.activity[i] > 0 ? 1 : 0.4 }} />
                         <span>{day}</span>
                       </div>
                     ))}

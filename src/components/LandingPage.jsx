@@ -3,8 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import {
   Brain, Sparkles, BookOpen, Zap, Star, Shield,
   ChevronRight, Menu, X, ArrowRight, Check,
-  Globe, Calculator, Code2, PenTool, MessageSquare, TrendingUp
+  Globe, Calculator, Code2, PenTool, MessageSquare, TrendingUp,
+  FileText
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
 import './LandingPage.css';
 
 // ── Data ─────────────────────────────────────────────────────────────────────
@@ -62,6 +65,14 @@ const FEATURES = [
     title: "Test & Quiz",
     desc: "Har bir mavzu bo'yicha AI tomonidan yaratilgan testlar bilan bilimingizni sinab ko'ring.",
     tags: ["Quiz", "MCQ", "Score"],
+  },
+  {
+    icon: <FileText size={24} />,
+    color: "#06b6d4",
+    bg: "rgba(6,182,212,0.12)",
+    title: "Eksport Markazi",
+    desc: "AI javoblarini bir soniyada PDF, Word, Excel yoki Slayd (PPTX) formatlariga aylantiring.",
+    tags: ["PDF", "Word", "Excel", "PPTX"],
   },
 ];
 
@@ -179,6 +190,7 @@ function StatItem({ value, label, icon }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 function LandingPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -210,7 +222,8 @@ function LandingPage() {
           </div>
 
           <div className="nav-actions">
-            <button className="nav-login-btn" onClick={goToLogin}>Kirish</button>
+            <LanguageSwitcher />
+            <button className="nav-login-btn" onClick={goToLogin}>{t('login', 'Kirish')}</button>
             <button className="nav-cta-btn" onClick={goToLogin}>
               Bepul boshlash <ChevronRight size={16} />
             </button>
@@ -251,14 +264,14 @@ function LandingPage() {
             <button className="hero-cta-primary" onClick={goToLogin}>
               <Zap size={18} /> Bepul boshlash
             </button>
-            <a href="#features" className="hero-cta-secondary">
-              Batafsil ko'rish <ArrowRight size={16} />
-            </a>
+            <button className="hero-cta-kids" onClick={() => navigate('/kids')} style={{ background: 'linear-gradient(135deg, #f472b6 0%, #ec4899 100%)', color: '#fff', border: 'none', padding: '14px 28px', borderRadius: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: 'transform 0.2s', boxShadow: '0 8px 20px rgba(236,72,153,0.3)' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+              <Star size={18} fill="currentColor" /> {t('kids_mode', 'Bolalar rejimi')}
+            </button>
           </div>
 
           <div className="hero-social-proof fade-in" style={{ animationDelay: '0.4s' }}>
             <div className="proof-avatars">
-              {['JT','MY','BR','AK','ZN'].map((a, i) => (
+              {['JT', 'MY', 'BR', 'AK', 'ZN'].map((a, i) => (
                 <div key={i} className="proof-avatar" style={{ zIndex: 5 - i }}>
                   {a}
                 </div>

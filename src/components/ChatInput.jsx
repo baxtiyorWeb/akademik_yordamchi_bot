@@ -62,6 +62,16 @@ const ChatInput = React.memo(({ onSend, isTyping }) => {
               <div className="image-thumbnail">
                 <img src={URL.createObjectURL(attachment)} alt="Preview" />
               </div>
+            ) : attachment.type.startsWith('audio/') ? (
+              <div className="file-info audio">
+                <Mic size={14} color="#10b981" />
+                <span>Audio fayl</span>
+              </div>
+            ) : attachment.type.startsWith('video/') ? (
+              <div className="file-info video">
+                <Send size={14} color="#8b5cf6" />
+                <span>Video fayl</span>
+              </div>
             ) : (
               <div className="file-info">
                 <Paperclip size={14} />
@@ -88,11 +98,11 @@ const ChatInput = React.memo(({ onSend, isTyping }) => {
           ref={fileInputRef} 
           hidden 
           onChange={handleFileChange} 
-          accept="image/*,.pdf"
+          accept="image/*,.pdf,audio/*,video/*"
         />
         
         <textarea
-          placeholder="Savol yozing yoki rasm yuklang..."
+          placeholder="Savol yozing yoki rasm/audio/video yuklang..."
           value={localInput}
           onChange={(e) => setLocalInput(e.target.value)}
           onKeyDown={handleKeyDown}

@@ -5,8 +5,11 @@ import { supabase } from './supabase';
 import LandingPage from './components/LandingPage';
 import AuthPage from './components/AuthPage';
 import TutorChat from './components/TutorChat';
+import KidsChat from './components/KidsChat';
 import ProfilePage from './components/ProfilePage';
+import MathCenter from './components/MathCenter';
 import './App.css';
+import { Toaster } from 'sonner';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -39,6 +42,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <Toaster position="top-center" richColors />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route
@@ -50,8 +54,16 @@ function App() {
           element={session ? <TutorChat session={session} /> : <Navigate to="/login" />}
         />
         <Route
+          path="/kids"
+          element={session ? <KidsChat session={session} /> : <Navigate to="/login" />}
+        />
+        <Route
           path="/profile"
           element={session ? <ProfilePage session={session} /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/math"
+          element={session ? <MathCenter /> : <Navigate to="/login" />}
         />
       </Routes>
     </BrowserRouter>
