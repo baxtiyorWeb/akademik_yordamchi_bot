@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Sigma, Upload, Copy, Check, Trash2, FileText, Sparkles, ArrowLeft, Image as ImageIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -113,6 +114,7 @@ const MathCenter = () => {
       mathml = mathml.replace(/<annotation[^>]*>[\s\S]*?<\/annotation>/gi, '');
       mathml = mathml.replace(/<\/?semantics[^>]*>/gi, '');
 
+
       // Word bu o'zgaruvchilar emas, balki "math" ekanini bilishi uchun
       if (!mathml.includes('xmlns=')) {
         mathml = mathml.replace('<math', '<math xmlns="http://www.w3.org/1998/Math/MathML"');
@@ -199,6 +201,7 @@ const MathCenter = () => {
               />
             </div>
           </div>
+
 
           {/* Middle Column: Large Preview & Copy */}
           <div className="math-preview-column">
