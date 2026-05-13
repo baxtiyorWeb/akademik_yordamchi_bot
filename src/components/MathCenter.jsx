@@ -107,51 +107,26 @@ const MathCenter = () => {
 
       let mathml = mathMatch[0];
 
-      // Word chalkashmasligi uchun keraksiz tegleri tozalaymiz
+      // Word chalkashmasligi uchun qoldiq teglarni tozalaymiz
       mathml = mathml.replace(/<annotation[^>]*>[\s\S]*?<\/annotation>/gi, '');
       mathml = mathml.replace(/<\/?semantics[^>]*>/gi, '');
 
-      // Word bu formula ekanini bilishi uchun "xmlns" va "display" majburiy
+      // Word bu o'zgaruvchilar emas, balki "math" ekanini bilishi uchun
       if (!mathml.includes('xmlns=')) {
         mathml = mathml.replace('<math', '<math xmlns="http://www.w3.org/1998/Math/MathML"');
       }
-      if (!mathml.includes('display=')) {
-        mathml = mathml.replace('<math', '<math display="block"');
-      }
 
-      // BRAUZER ORQALI NUSXALASH TRICK'I (Word 100% tushunadi)
-      // 1. Ko'rinmas div yaratamiz
-      const container = document.createElement('div');
-      container.innerHTML = mathml;
-      container.style.position = 'fixed';
-      container.style.left = '-9999px'; // Ekrandan tashqariga yashiramiz
-      container.style.top = '0';
-      document.body.appendChild(container);
+      // ASOSIY YECHIM: Biz clipboardga hech qanday HTML wrapper (Blob) bermaymiz.
+      // Word brauzerning HTML formatini ko'rsa, buzib tashlayotgani aniq bo'ldi.
+      // Biz faqat "Toza XML matn" beramiz.
+      await navigator.clipboard.writeText(mathml);
 
-      // 2. Ichidagi formulani xuddi sichqoncha bilan belgilagandek belgilaymiz
-      const selection = window.getSelection();
-      const range = document.createRange();
-      range.selectNodeContents(container);
-      selection.removeAllRanges();
-      selection.addRange(range);
-
-      // 3. Brauzerga nusxalash buyrug'ini beramiz
-      const successful = document.execCommand('copy');
-
-      // 4. Izimizni tozalaymiz
-      selection.removeAllRanges();
-      document.body.removeChild(container);
-
-      if (successful) {
-        setCopied(true);
-        toast.success("MS Word uchun tayyor! Ctrl+V bosing.");
-        setTimeout(() => setCopied(false), 2000);
-      } else {
-        throw new Error('Brauzer nusxalashga ruxsat bermadi');
-      }
+      setCopied(true);
+      toast.success("Nusxalandi! Endi Alt + = ni bosing."); // Xabarni o'zgartirdim
+      setTimeout(() => setCopied(false), 3500);
     } catch (err) {
       console.error(err);
-      toast.error("Nusxa olishda xatolik");
+      toast.error("Nusxa olishda xatolik yuz berdi");
     }
   };
 
