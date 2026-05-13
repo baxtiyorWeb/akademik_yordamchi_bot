@@ -89,6 +89,8 @@ const MathCenter = () => {
     }
   };
 
+
+
   const copyForWord = async (targetLatex = latex) => {
     if (!targetLatex.trim()) return;
 
