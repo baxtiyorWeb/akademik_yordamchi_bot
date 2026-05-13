@@ -13,7 +13,6 @@ const ChatInput = React.memo(({ onSend, isTyping }) => {
     setLocalInput('');
     setAttachment(null);
   };
-
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -93,14 +92,14 @@ const ChatInput = React.memo(({ onSend, isTyping }) => {
         <button className="tool-button" onClick={() => fileInputRef.current.click()}>
           <Paperclip size={20} />
         </button>
-        <input 
-          type="file" 
-          ref={fileInputRef} 
-          hidden 
-          onChange={handleFileChange} 
+        <input
+          type="file"
+          ref={fileInputRef}
+          hidden
+          onChange={handleFileChange}
           accept="image/*,.pdf,audio/*,video/*"
         />
-        
+
         <textarea
           placeholder="Savol yozing yoki rasm/audio/video yuklang..."
           value={localInput}
@@ -119,8 +118,8 @@ const ChatInput = React.memo(({ onSend, isTyping }) => {
           rows={1}
         />
 
-        <button 
-          className={`tool-button ${isListening ? 'active' : ''}`} 
+        <button
+          className={`tool-button ${isListening ? 'active' : ''}`}
           onClick={handleVoice}
         >
           {isListening ? <MicOff size={20} color="#ef4444" /> : <Mic size={20} />}
