@@ -100,10 +100,15 @@ export const useMessages = (session) => {
     },
   });
 
+  const setMessages = (newMessages) => {
+    queryClient.setQueryData(['messages', userId], newMessages);
+  };
+
   return {
     messages: messagesQuery.data || [],
     isLoading: messagesQuery.isLoading,
     isSending: sendMessageMutation.isPending,
+    setMessages,
     sendMessage: sendMessageMutation.mutate,
     clearChat: clearChatMutation.mutate,
   };

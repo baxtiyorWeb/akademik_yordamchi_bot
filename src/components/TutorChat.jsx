@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Sparkles, User, Brain, Star, LogOut, BookOpen, Zap, TrendingUp, Settings, Trash2, Sigma } from 'lucide-react';
+import { Sparkles, User, Brain, Star, LogOut, BookOpen, Zap, TrendingUp, Settings, Trash2, Sigma, Mic, Languages, Code, Edit2, Check, X, FileText, Globe, PenTool, Cpu, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -18,13 +18,12 @@ import { useMessages } from '../hooks/useMessages';
 import { useNotebook } from '../hooks/useNotebook';
 
 const QUICK_CHIPS = [
-  { emoji: '🇬🇧', label: 'Ingliz zamonlari', desc: 'Zamonlar tahlili va misollar', prompt: 'Ingliz tili zamonlarini tushuntirib ber' },
-  { emoji: '🇷🇺', label: 'Ruscha tarjima', desc: 'Matnlarni professional tarjima qilish', prompt: "Ushbu matnni rus tiliga tarjima qil: 'Salom, ahvollar qalay?'" },
-  { emoji: '✍️', label: 'IELTS Writing', desc: 'IELTS uchun foydali maslahatlar', prompt: 'IELTS Writing task 2 uchun foydali so\'zlar' },
-  { emoji: '📐', label: 'Matematika', desc: 'Murakkab misollar yechimi', prompt: 'Kvadrat tenglamani yechishni tushuntirib ber' },
-  { emoji: '💻', label: 'Dasturlash', desc: 'Kod yozish va xatolarni tuzatish', prompt: 'Python da funksiyalar haqida misollar bilan tushuntir' },
-  { emoji: '📖', label: 'Referat yozish', desc: 'Akademik mavzularda maqolalar', prompt: 'Sun\'iy intellekt haqida qisqa referat yoz' },
-  { emoji: '📄', label: 'PDF tayyorlash', desc: 'Mavzuni PDF ga eksport qilish', prompt: 'Menga biror mavzuda PDF fayl tayyorlab ber' },
+  { icon: <Languages size={20} />, label: 'Ingliz zamonlari', desc: 'Zamonlar tahlili va misollar', prompt: 'Ingliz tili zamonlarini tushuntirib ber', color: '#6366f1' },
+  { icon: <Globe size={20} />, label: 'Ruscha tarjima', desc: 'Matnlarni professional tarjima qilish', prompt: "Ushbu matnni rus tiliga tarjima qil: 'Salom, ahvollar qalay?'", color: '#3b82f6' },
+  { icon: <PenTool size={20} />, label: 'IELTS Writing', desc: 'IELTS uchun foydali maslahatlar', prompt: 'IELTS Writing task 2 uchun foydali so\'zlar', color: '#f59e0b' },
+  { icon: <Sigma size={20} />, label: 'Matematika', desc: 'Murakkab misollar yechimi', prompt: 'Kvadrat tenglamani yechishni tushuntirib ber', color: '#10b981' },
+  { icon: <Code size={20} />, label: 'Dasturlash', desc: 'Kod yozish va xatolarni tuzatish', prompt: 'Python da funksiyalar haqida misollar bilan tushuntir', color: '#8b5cf6' },
+  { icon: <FileText size={20} />, label: 'PDF tayyorlash', desc: 'Mavzuni PDF ga eksport qilish', prompt: 'Menga biror mavzuda PDF fayl tayyorlab ber', color: '#ec4899' },
 ];
 
 function TutorChat({ session }) {
@@ -34,7 +33,7 @@ function TutorChat({ session }) {
 
   // TanStack Query Hooks
   const { profile, decrementCredits } = useProfile(session);
-  const { messages, isSending, sendMessage, clearChat } = useMessages(session);
+  const { messages, isSending, setMessages, sendMessage, clearChat } = useMessages(session);
   const { entries: notebook, saveEntry, deleteEntry } = useNotebook(session);
 
   // Local UI State
@@ -45,17 +44,42 @@ function TutorChat({ session }) {
   const [showResults, setShowResults] = useState(false);
   const [vibeMode, setVibeMode] = useState(false);
   const [logoClicks, setLogoClicks] = useState(0);
+  const [isVoiceCall, setIsVoiceCall] = useState(false);
+  const [isListeningForVoice, setIsListeningForVoice] = useState(false);
+  const [lastTranscript, setLastTranscript] = useState('');
+  const [useSegments, setUseSegments] = useState(false);
+  const [activeTopic, setActiveTopic] = useState('all');
+  const [sessions, setSessions] = useState([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(15);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [editingSessionId, setEditingSessionId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState('');
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
 
   const handleLogoClick = () => {
+    // 3 marta tez bosilsa - Vibe Mode (Easter Egg)
     setLogoClicks(prev => {
-      if (prev + 1 >= 3) {
+      const next = prev + 1;
+      if (next >= 3) {
         setVibeMode(!vibeMode);
+        toast.info(vibeMode ? "Engine Vibe O'chirildi" : "Engine Vibe Yoqildi! ✨");
         return 0;
       }
-      return prev + 1;
+      return next;
     });
-    // Reset clicks after 2 seconds
-    setTimeout(() => setLogoClicks(0), 2000);
+
+    // ChatGPT/Gemini uslubida: Logo bosilsa yangi chat boshlanadi
+    if (messages.length > 0) {
+      handleClearChat();
+    }
+
+    // 1 soniyadan keyin clicklarni tozalash
+    setTimeout(() => setLogoClicks(0), 1000);
   };
 
   useEffect(() => {
@@ -159,14 +183,238 @@ function TutorChat({ session }) {
     sendMessage({ userText: analysisPrompt, currentMessages: messages });
   }, [quiz, showResults, selectedAnswers, messages, sendMessage]);
 
+  // ── Voice Call Logic ────────────────────────────────────────────────────────
+  const speakText = (text) => {
+    if (!window.speechSynthesis) return;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'uz-UZ'; // Default to Uzbek
+    // Try to detect language or just use system default
+    window.speechSynthesis.speak(utterance);
+
+    utterance.onend = () => {
+      if (isVoiceCall) {
+        startListening();
+      }
+    };
+  };
+
+  const startListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'uz-UZ';
+    recognition.interimResults = true;
+    recognition.continuous = false;
+
+    recognition.onstart = () => setIsListeningForVoice(true);
+    recognition.onend = () => setIsListeningForVoice(false);
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setLastTranscript(transcript);
+      if (event.results[0].isFinal) {
+        recognition.stop();
+        handleVoiceSubmit(transcript);
+      }
+    };
+    recognition.start();
+  };
+
+  const handleVoiceSubmit = async (text) => {
+    if (!text.trim() || isSending) return;
+    try {
+      const { fetchGeminiResponse } = await import('../api/gemini');
+      const response = await fetchGeminiResponse(text, messages, null, 'TUTOR');
+      sendMessage({ userText: text, aiResponse: response });
+      speakText(response);
+    } catch (err) {
+      console.error(err);
+      setIsVoiceCall(false);
+    }
+  };
+
+  const toggleVoiceCall = () => {
+    if (isVoiceCall) {
+      setIsVoiceCall(false);
+      window.speechSynthesis.cancel();
+    } else {
+      setIsVoiceCall(true);
+      startListening();
+    }
+  };
+
+  // ── Message Grouping Logic ──────────────────────────────────────────────────
+  const TOPIC_TYPES = [
+    { id: 'math', label: 'Matematika', icon: <Sigma size={14} />, keywords: ['matematika', 'integral', 'tenglama', 'misol', 'hisob', 'formula', 'son'] },
+    { id: 'english', label: 'Ingliz tili', icon: <Languages size={14} />, keywords: ['ingliz', 'english', 'ielts', 'grammar', 'so\'z', 'tarjima'] },
+    { id: 'coding', label: 'Dasturlash', icon: <Code size={14} />, keywords: ['kod', 'python', 'js', 'react', 'css', 'dastur', 'vibe'] },
+    { id: 'science', label: 'Fan va Ta\'lim', icon: <BookOpen size={14} />, keywords: ['fizika', 'tarix', 'kimyo', 'biologiya', 'falsafa', 'ilmiy'] },
+  ];
+
+  const getMessageTopic = (text) => {
+    const lower = (text || "").toLowerCase();
+    for (const t of TOPIC_TYPES) {
+      if (t.keywords.some(k => lower.includes(k))) return t.id;
+    }
+    return 'general';
+  };
+
+  const segments = useMemo(() => {
+    if (messages.length === 0) return [];
+    const groups = [];
+    let currentGroup = { topicId: 'general', messages: [], summary: '' };
+
+    messages.forEach((msg, idx) => {
+      if (msg.role === 'user') {
+        const newTopicId = getMessageTopic(msg.content);
+        if (newTopicId !== currentGroup.topicId && currentGroup.messages.length > 0) {
+          groups.push(currentGroup);
+          currentGroup = { topicId: newTopicId, messages: [msg], summary: msg.content.substring(0, 40) + '...' };
+        } else {
+          currentGroup.topicId = newTopicId;
+          currentGroup.messages.push(msg);
+          if (!currentGroup.summary) currentGroup.summary = msg.content.substring(0, 40) + '...';
+        }
+      } else {
+        currentGroup.messages.push(msg);
+      }
+    });
+    groups.push(currentGroup);
+    return groups;
+  }, [messages]);
+
+  const activeSegments = useMemo(() => {
+    if (activeTopic === 'all') return segments;
+    return segments.filter(s => s.topicId === activeTopic);
+  }, [segments, activeTopic]);
+
+  const chatSummary = useMemo(() => {
+    if (messages.length === 0) return null;
+    const userMsgs = messages.filter(m => m.role === 'user');
+    return userMsgs.length > 0 ? userMsgs[userMsgs.length - 1].content.substring(0, 60) + "..." : "";
+  }, [messages]);
+
   const handleLogout = useCallback(() => supabase.auth.signOut(), []);
 
-  const handleClearChat = useCallback(() => {
-    if (window.confirm('Barcha xabarlarni o\'chirasizmi?')) {
-      clearChat();
-      setQuiz(null);
+  // ── Supabase Logic ─────────────────────────────────────────────────────────
+  const fetchSessions = useCallback(async () => {
+    setIsLoadingSessions(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('tutor_sessions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) console.error("Error fetching sessions:", error);
+    else setSessions(data || []);
+    setIsLoadingSessions(false);
+  }, []);
+
+  useEffect(() => {
+    fetchSessions();
+  }, [fetchSessions]);
+
+  const handleClearChat = useCallback(async () => {
+    if (messages.length === 0 || isArchiving || isLoadingSessions) return;
+
+    // Dublikatlarni tekshirish: faqat mazmun (role va content) bo'yicha
+    const cleanCurrent = messages.map(m => ({ role: m.role, content: m.content }));
+
+    const isAlreadyArchived = sessions.some(s => {
+      const cleanSession = s.messages.map(m => ({ role: m.role, content: m.content }));
+      return JSON.stringify(cleanSession) === JSON.stringify(cleanCurrent);
+    });
+
+    if (isAlreadyArchived) {
+      setMessages([]);
+      setCurrentSessionId(null);
+      setVisibleCount(15);
+      return;
     }
-  }, [clearChat]);
+
+    setIsArchiving(true);
+    const loadingId = toast.loading("Suhbat arxivlanmoqda...");
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not found");
+
+      // Arxivlash (Supabase-ga saqlash)
+      let autoTitle = messages[0].content
+        .replace(/\[Ilova:.*?\]/g, '') // Ilova qismini olib tashlash
+        .replace(/[#*`_]/g, '')        // Markdown belgilarini olib tashlash
+        .trim()
+        .substring(0, 40);
+
+      if (!autoTitle) autoTitle = "Yangi suhbat";
+      if (messages[0].content.length > 40) autoTitle += "...";
+
+      const { error } = await supabase
+        .from('tutor_sessions')
+        .insert({
+          user_id: user.id,
+          title: autoTitle,
+          messages: messages,
+          created_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      setMessages([]);
+      setCurrentSessionId(null);
+      setVisibleCount(15);
+      fetchSessions();
+      toast.success("Suhbat bulutga arxivlandi!", { id: loadingId });
+    } catch (error) {
+      console.error("Save error:", error);
+      toast.error("Xatolik: " + error.message, { id: loadingId });
+    } finally {
+      setIsArchiving(false);
+    }
+  }, [messages, fetchSessions, isArchiving, currentSessionId, setMessages]);
+
+  const loadSession = (session) => {
+    setMessages(session.messages);
+    setCurrentSessionId(session.id);
+    setVisibleCount(15);
+    setShowHistory(false);
+    toast.info("Eski suhbat bulutdan yuklandi");
+  };
+
+  const deleteSession = async (id, e) => {
+    e.stopPropagation();
+    if (!window.confirm("Ushbu suhbatni o'chirmoqchimisiz?")) return;
+
+    const { error } = await supabase.from('tutor_sessions').delete().eq('id', id);
+    if (!error) {
+      setSessions(prev => prev.filter(s => s.id !== id));
+      toast.success("Suhbat o'chirildi");
+    }
+  };
+
+  const startRenaming = (session, e) => {
+    e.stopPropagation();
+    setEditingSessionId(session.id);
+    setEditingTitle(session.title);
+  };
+
+  const handleRename = async (id) => {
+    if (!editingTitle.trim()) return;
+
+    const { error } = await supabase
+      .from('tutor_sessions')
+      .update({ title: editingTitle })
+      .eq('id', id);
+
+    if (!error) {
+      setSessions(prev => prev.map(s => s.id === id ? { ...s, title: editingTitle } : s));
+      setEditingSessionId(null);
+      toast.success("Nom o'zgartirildi");
+    }
+  };
 
   // UI helpers
   const creditColor = useMemo(() =>
@@ -241,6 +489,65 @@ function TutorChat({ session }) {
 
             <button
               className="tutor-info-card"
+              onClick={handleClearChat}
+              style={{ width: '100%', textAlign: 'left', cursor: 'pointer', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.05)' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Trash2 size={16} style={{ color: '#ef4444' }} />
+                <h3 style={{ margin: 0, color: '#ef4444' }}>Yangi Suhbat</h3>
+              </div>
+              <p style={{ marginTop: 4, fontSize: '0.78rem', color: '#94a3b8' }}>Joriyni arxivlab, yangisini boshlash</p>
+            </button>
+
+            <div className="sidebar-history">
+              <h4 className="sidebar-section-title">Suhbatlar Tarixi (Cloud)</h4>
+              {isLoadingSessions ? (
+                <div className="history-loading">Yuklanmoqda...</div>
+              ) : sessions.length === 0 ? (
+                <p style={{ fontSize: '0.75rem', color: '#475569', padding: '0 10px' }}>Tarix bo'sh</p>
+              ) : (
+                sessions.map(s => (
+                  <div key={s.id} className={`history-item-container ${editingSessionId === s.id ? 'editing' : ''}`}>
+                    {editingSessionId === s.id ? (
+                      <div className="session-edit-box">
+                        <input
+                          autoFocus
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleRename(s.id)}
+                        />
+                        <button onClick={() => handleRename(s.id)} className="save-btn"><Check size={12} /></button>
+                        <button onClick={() => setEditingSessionId(null)} className="cancel-btn"><X size={12} /></button>
+                      </div>
+                    ) : (
+                      <div className={`history-item ${currentSessionId === s.id ? 'active' : ''}`} onClick={() => loadSession(s)}>
+                        <BookOpen size={12} className="history-icon" />
+                        <span className="session-title">{s.title}</span>
+                        <div className="session-actions">
+                          <Edit2 size={12} className="edit-session-icon" onClick={(e) => startRenaming(s, e)} />
+                          <Trash2 size={12} className="delete-session-icon" onClick={(e) => deleteSession(s.id, e)} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <button
+              className="tutor-info-card voice-call-btn"
+              onClick={toggleVoiceCall}
+              style={{ width: '100%', textAlign: 'left', cursor: 'pointer', border: '1px solid rgba(16, 185, 129, 0.3)', background: 'rgba(16, 185, 129, 0.05)' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Mic size={16} style={{ color: '#10b981' }} />
+                <h3 style={{ margin: 0, color: '#10b981' }}>Ovozli Muloqot</h3>
+              </div>
+              <p style={{ marginTop: 4, fontSize: '0.78rem', color: '#94a3b8' }}>Real-vaqtda AI bilan gaplashish</p>
+            </button>
+
+            <button
+              className="tutor-info-card"
               onClick={() => navigate('/math')}
               style={{ width: '100%', textAlign: 'left', cursor: 'pointer', border: '1px solid rgba(139, 92, 246, 0.3)', background: 'rgba(139, 92, 246, 0.05)' }}
             >
@@ -277,13 +584,38 @@ function TutorChat({ session }) {
       {/* ── Asosiy chat maydoni ──────────────────────────────────────────── */}
       <main className="tutor-main">
         <header className="tutor-header">
-          <div className="header-title">
-            <h2>Til Tahlili va O'rganish</h2>
+          <div className="header-left">
+            <button className="burger-menu-btn" onClick={() => setIsMobileSidebarOpen(true)}>
+              <Menu size={24} />
+            </button>
+            <div className="header-title">
+              <h2>{activeTopic === 'all' ? 'Til Tahlili va O\'rganish' : TOPIC_TYPES.find(t => t.id === activeTopic)?.label}</h2>
+              {chatSummary && <p className="chat-mini-summary">Oxirgi mavzu: {chatSummary}</p>}
+            </div>
           </div>
-          <div className="header-badge"><span>Professional Rejim</span></div>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            {messages.length > 4 && activeTopic === 'all' && (
+              <button
+                className={`segment-toggle-btn ${useSegments ? 'active' : ''}`}
+                onClick={() => setUseSegments(!useSegments)}
+              >
+                {useSegments ? 'Oddiy' : 'Bo\'limlar'}
+              </button>
+            )}
+            <div className="header-badge mobile-hide"><span>Professional Rejim</span></div>
+          </div>
         </header>
 
         <div className="chat-messages">
+          {messages.length > visibleCount && (
+            <button
+              className="load-more-btn"
+              onClick={() => setVisibleCount(prev => prev + 15)}
+            >
+              Oldingi xabarlarni yuklash ({messages.length - visibleCount} ta qoldi)
+            </button>
+          )}
+
           {messages.length === 0 ? (
             <div className="welcome-state fade-in">
               <div className="welcome-icon-wrapper pulse"><Sparkles size={48} /></div>
@@ -293,11 +625,13 @@ function TutorChat({ session }) {
               </p>
               <div className="suggestion-chips">
                 {QUICK_CHIPS.map((chip, i) => (
-                  <button key={i} onClick={() => handleSend(chip.prompt)} className="fade-in" style={{ animationDelay: `${i * 0.1}s` }}>
-                    <span style={{ fontSize: '1.5rem' }}>{chip.emoji}</span>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontWeight: 600, color: '#fff' }}>{chip.label}</span>
-                      <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{chip.desc}</span>
+                  <button key={i} onClick={() => handleSend(chip.prompt)} className="chip-btn fade-in" style={{ animationDelay: `${i * 0.1}s`, borderLeft: `4px solid ${chip.color}` }}>
+                    <div className="chip-icon-wrapper" style={{ backgroundColor: `${chip.color}15`, color: chip.color }}>
+                      {chip.icon}
+                    </div>
+                    <div className="chip-info">
+                      <span className="chip-label">{chip.label}</span>
+                      <span className="chip-desc">{chip.desc}</span>
                     </div>
                   </button>
                 ))}
@@ -305,15 +639,39 @@ function TutorChat({ session }) {
             </div>
           ) : (
             <>
-              {messages.map((msg, idx) => (
-                <ChatMessage
-                  key={msg.id}
-                  msg={msg}
-                  previousMsg={idx > 0 ? messages[idx - 1] : null}
-                  onSave={saveEntry}
-                  onAutoFix={handleAutoFix}
-                />
-              ))}
+              {useSegments || activeTopic !== 'all' ? (
+                activeSegments.map((seg, sIdx) => (
+                  <div key={sIdx} className="chat-segment-block fade-in">
+                    <div className="segment-divider">
+                      <div className="segment-line" />
+                      <div className="segment-label">
+                        {TOPIC_TYPES.find(t => t.id === seg.topicId)?.icon || <Sparkles size={12} />}
+                        <span>{TOPIC_TYPES.find(t => t.id === seg.topicId)?.label || 'Boshqa'} - {seg.summary}</span>
+                      </div>
+                      <div className="segment-line" />
+                    </div>
+                    {seg.messages.map((msg, idx) => (
+                      <ChatMessage
+                        key={msg.id}
+                        msg={msg}
+                        previousMsg={idx > 0 ? seg.messages[idx - 1] : null}
+                        onSave={saveEntry}
+                        onAutoFix={handleAutoFix}
+                      />
+                    ))}
+                  </div>
+                ))
+              ) : (
+                messages.slice(-visibleCount).map((msg, idx) => (
+                  <ChatMessage
+                    key={msg.id}
+                    msg={msg}
+                    previousMsg={idx > 0 ? messages.slice(-visibleCount)[idx - 1] : null}
+                    onSave={saveEntry}
+                    onAutoFix={handleAutoFix}
+                  />
+                ))
+              )}
 
               {quiz && (
                 <div className="quiz-section fade-in">
@@ -403,7 +761,7 @@ function TutorChat({ session }) {
         </div>
 
         <ChatInput onSend={handleSend} isTyping={isSending} />
-        <MobileBottomNav credits={credits} onLogout={handleLogout} />
+        <MobileBottomNav credits={credits} onLogout={handleLogout} onVoiceCall={toggleVoiceCall} />
 
         {/* ── Modals ────────────────────────────────────────────────────── */}
         {showCreditModal && (
@@ -419,7 +777,6 @@ function TutorChat({ session }) {
             </div>
           </div>
         )}
-
         {showNotebook && (
           <div className="notebook-panel fade-in">
             <div className="notebook-header">
@@ -443,7 +800,153 @@ function TutorChat({ session }) {
             </div>
           </div>
         )}
+
+        {/* ── Voice Call Overlay ─────────────────────────────────────────── */}
+        {isVoiceCall && (
+          <div className="voice-call-overlay fade-in">
+            <div className="call-orb-container">
+              <div className={`call-orb ${isListeningForVoice ? 'listening' : 'speaking'}`}>
+                <div className="orb-inner" />
+                <div className="orb-wave w1" />
+                <div className="orb-wave w2" />
+              </div>
+              <div className="call-status">
+                <h3>{isListeningForVoice ? "Sizni eshityapman..." : "LingoAI gapirmoqda..."}</h3>
+                <p className="transcript-preview">{lastTranscript || "Savol bering..."}</p>
+              </div>
+            </div>
+            <button className="end-call-btn" onClick={toggleVoiceCall}>
+              <LogOut size={24} />
+              <span>Muloqotni yakunlash</span>
+            </button>
+          </div>
+        )}
       </main>
+
+      {/* ── O'ng Sidebar: Mavzular ─────────────────────────────────────── */}
+      {!vibeMode && messages.length > 0 && (
+        <aside className="tutor-right-sidebar fade-in">
+          <div className="sidebar-brand">
+            <TrendingUp size={18} style={{ color: '#8b5cf6' }} />
+            <h2 style={{ fontSize: '0.85rem' }}>Chat Tahlili</h2>
+          </div>
+
+          <div className="sidebar-content">
+            <div className="sidebar-topics">
+              <h4 className="sidebar-section-title">Mavzular (Chapters)</h4>
+              <button
+                className={`topic-item ${activeTopic === 'all' ? 'active' : ''}`}
+                onClick={() => { setActiveTopic('all'); setUseSegments(false); }}
+              >
+                <div className="topic-icon"><Sparkles size={14} /></div>
+                <span>Barcha xabarlar</span>
+              </button>
+              {TOPIC_TYPES.map(t => {
+                const count = segments.filter(s => s.topicId === t.id).length;
+                if (count === 0) return null;
+                return (
+                  <button
+                    key={t.id}
+                    className={`topic-item ${activeTopic === t.id ? 'active' : ''}`}
+                    onClick={() => { setActiveTopic(t.id); setUseSegments(true); }}
+                  >
+                    <div className="topic-icon">{t.icon}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>{t.label}</span>
+                      <span style={{ fontSize: '0.65rem', color: '#64748b' }}>Bo'limni ko'rish</span>
+                    </div>
+                    <span className="topic-count">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="tutor-info-card highlighted" style={{ marginTop: 'auto' }}>
+              <h3>Statistika</h3>
+              <p style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Suhbat davomida {segments.length} ta asosiy mavzu aniqlandi.</p>
+            </div>
+          </div>
+        </aside>
+      )}
+      {/* ── Mobile Sidebar Drawer ────────────────────────────────────────── */}
+      <div className={`mobile-sidebar-drawer ${isMobileSidebarOpen ? 'open' : ''}`}>
+        <div className="drawer-backdrop" onClick={() => setIsMobileSidebarOpen(false)} />
+        <div className="drawer-content">
+          <div className="drawer-header">
+            <div className="sidebar-brand">
+              <Brain size={24} color="#8b5cf6" />
+              <h2>LingoAI Expert</h2>
+            </div>
+            <button className="drawer-close-btn" onClick={() => setIsMobileSidebarOpen(false)}>
+              <X size={24} />
+            </button>
+          </div>
+
+          <div className="drawer-body">
+            <div className="drawer-section">
+              <h4 className="sidebar-section-title">Hisob</h4>
+              <div className="tutor-info-card credits" style={{ background: `${creditColor}10`, border: `1px solid ${creditColor}30` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Zap size={18} style={{ color: creditColor }} />
+                  <div>
+                    <h3 style={{ fontSize: '1rem', color: creditColor }}>{credits} KREDIT</h3>
+                    <p style={{ fontSize: '0.7rem', color: '#64748b' }}>Sizning balansingiz</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="drawer-section">
+              <h4 className="sidebar-section-title">Mavzular (Chapters)</h4>
+              <div className="sidebar-topics">
+                <button
+                  className={`topic-item ${activeTopic === 'all' ? 'active' : ''}`}
+                  onClick={() => { setActiveTopic('all'); setUseSegments(false); setIsMobileSidebarOpen(false); }}
+                >
+                  <div className="topic-icon"><Sparkles size={14} /></div>
+                  <span>Barcha xabarlar</span>
+                </button>
+                {TOPIC_TYPES.map(t => {
+                  const count = segments.filter(s => s.topicId === t.id).length;
+                  if (count === 0) return null;
+                  return (
+                    <button
+                      key={t.id}
+                      className={`topic-item ${activeTopic === t.id ? 'active' : ''}`}
+                      onClick={() => { setActiveTopic(t.id); setUseSegments(true); setIsMobileSidebarOpen(false); }}
+                    >
+                      <div className="topic-icon">{t.icon}</div>
+                      <span>{t.label}</span>
+                      <span className="topic-count">{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="drawer-section">
+              <h4 className="sidebar-section-title">Suhbatlar Tarixi</h4>
+              <div className="sidebar-history">
+                {sessions.map(s => (
+                  <div key={s.id} className="history-item-container">
+                    <button className="history-item" onClick={() => { loadSession(s); setIsMobileSidebarOpen(false); }}>
+                      <BookOpen size={12} />
+                      <span className="session-title">{s.title}</span>
+                      <Trash2 size={12} className="delete-session-icon" onClick={(e) => deleteSession(s.id, e)} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="drawer-footer">
+            <button className="logout-btn" onClick={handleLogout}>
+              <LogOut size={18} /> Chiqish
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

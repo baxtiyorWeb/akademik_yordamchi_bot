@@ -287,14 +287,20 @@
   margin-top: auto;
 }
 
+.button-group {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
 .btn-primary {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  width: 100%;
-  padding: 18px;
-  font-size: 1rem;
+  padding: 16px;
+  font-size: 0.95rem;
   font-weight: 600;
   color: #fff;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
@@ -302,8 +308,30 @@
   border-radius: 12px;
   cursor: pointer;
   box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
-  transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
-  letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.btn-secondary-outline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary-outline:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -316,11 +344,11 @@
   transform: translateY(0);
 }
 
-.btn-primary:disabled {
-  background: rgba(255, 255, 255, 0.05);
-  color: #64748b;
-  box-shadow: none;
+.btn-primary:disabled, .btn-secondary-outline:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn-primary.copied {

@@ -4,13 +4,16 @@ import {
   Brain, Sparkles, BookOpen, Zap, Star, Shield,
   ChevronRight, Menu, X, ArrowRight, Check,
   Globe, Calculator, Code2, PenTool, MessageSquare, TrendingUp,
-  FileText
+  FileText, Notebook
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import './LandingPage.css';
 
-// ── Data ─────────────────────────────────────────────────────────────────────
+gsap.registerPlugin(ScrollTrigger);
+
 const NAV_LINKS = [
   { label: "Imkoniyatlar", href: "#features" },
   { label: "Narxlar", href: "#pricing" },
@@ -19,52 +22,52 @@ const NAV_LINKS = [
 
 const FEATURES = [
   {
-    icon: <Globe size={24} />,
-    color: "#6366f1",
-    bg: "rgba(99,102,241,0.12)",
-    title: "Til O'rganish",
-    desc: "Ingliz, rus va boshqa tillarda zamonlar, grammatika, tarjima va IELTS tayyorgarligida professional yordam.",
-    tags: ["IELTS", "Grammar", "Translation"],
+    icon: <Zap size={24} />,
+    color: "#0ea5e9",
+    bg: "rgba(14,165,233,0.12)",
+    title: "Gemini 3.1 Flash-Lite",
+    desc: "2026-yilning eng yangi va tezkor multimodal AI modeli yordamida daqiqa ichida javob oling.",
+    tags: ["Fast", "Multimodal", "2026"],
   },
   {
-    icon: <Calculator size={24} />,
+    icon: <Brain size={24} />,
+    color: "#a855f7",
+    bg: "rgba(168,85,247,0.12)",
+    title: "Thinking Engine",
+    desc: "Murakkab matematik va ilmiy masalalarni qadamba-qadam mantiqiy tahlil qilish tizimi.",
+    tags: ["Reasoning", "Step-by-Step", "Logic"],
+  },
+  {
+    icon: <FileText size={24} />,
     color: "#10b981",
     bg: "rgba(16,185,129,0.12)",
-    title: "Matematika",
-    desc: "Kvadrat tenglamalar, integral, limit va boshqa murakkab matematik masalalarni bosqichma-bosqich yechish.",
-    tags: ["Algebra", "Calculus", "Statistics"],
+    title: "Multimodal Tahlil",
+    desc: "Faqat matn emas, balki PDF, Video va Audio fayllarni chat ichida tahlil qiling.",
+    tags: ["PDF", "Video", "Audio"],
   },
   {
     icon: <Code2 size={24} />,
-    color: "#3b82f6",
-    bg: "rgba(59,130,246,0.12)",
-    title: "Dasturlash",
-    desc: "Python, JavaScript, C++ kabi tillarda kod yozish, xatolarni tuzatish va algoritmlarni tushunish.",
-    tags: ["Python", "JS", "Algorithms"],
-  },
-  {
-    icon: <PenTool size={24} />,
     color: "#f59e0b",
     bg: "rgba(245,158,11,0.12)",
-    title: "Referat & Insholar",
-    desc: "Akademik mavzularda professional maqola, referat va insho yozishda to'liq yordam va namunalar.",
-    tags: ["Essay", "Research", "Thesis"],
+    title: "Vibe Coding",
+    desc: "AI tomonidan yaratilgan kodlarni real vaqtda brauzerda ishga tushiring va natijani ko'ring.",
+    tags: ["Live Preview", "Coding", "Fix"],
   },
   {
-    icon: <MessageSquare size={24} />,
-    color: "#8b5cf6",
-    bg: "rgba(139,92,246,0.12)",
+    icon: <Notebook size={24} />,
+    color: "#ec4899",
+    bg: "rgba(236,72,153,0.12)",
     title: "Aqlli Daftar",
-    desc: "Muhim javoblarni bir tugma bilan saqlang. Daftaringizni istalgan vaqt oching va takrorlang.",
-    tags: ["Notes", "Save", "Review"],
+    desc: "Muhim akademik ma'lumotlarni konspekt qiling va bulutli xotirada saqlang.",
+    tags: ["Notes", "Cloud", "Academic"],
   },
   {
     icon: <Star size={24} />,
-    color: "#ec4899",
-    bg: "rgba(236,72,153,0.12)",
-    title: "Test & Quiz",
-    desc: "Har bir mavzu bo'yicha AI tomonidan yaratilgan testlar bilan bilimingizni sinab ko'ring.",
-    tags: ["Quiz", "MCQ", "Score"],
+    color: "#eab308",
+    bg: "rgba(234,179,8,0.12)",
+    title: "AI Quiz Generator",
+    desc: "O'quv materiallaringiz asosida avtomatik testlar va savollar to'plamini yarating.",
+    tags: ["Quiz", "Exam", "Prep"],
   },
   {
     icon: <FileText size={24} />,
@@ -88,7 +91,7 @@ const PLANS = [
     name: "Bepul",
     price: "0",
     desc: "Boshlash uchun",
-    features: ["50 ta kredit/oy", "Barcha fanlar", "Chat tarixi", "Aqlli daftar"],
+    features: ["50 ta kredit/oy", "Interaktiv chat", "Barcha fanlar", "Chat tarixi", "Aqlli daftar"],
     cta: "Bepul boshlash",
     highlight: false,
   },
@@ -122,7 +125,7 @@ const TESTIMONIALS = [
   },
   {
     name: "Malika Yusupova",
-    role: "Universitет 2-kurs",
+    role: "Universitet 2-kurs",
     avatar: "MY",
     color: "#10b981",
     text: "Matematika imtihonlarimga tayyorlanishda zo'r yordam bo'ldi. Har bir qadamni batafsil tushuntiradi, juda qulay.",
@@ -167,12 +170,13 @@ function useCountUp(target, duration = 2000) {
     return () => clearInterval(timer);
   }, [started, target, duration]);
 
-  return [ref, count];
+  return { ref, count };
 }
 
-// ── Stat Item ─────────────────────────────────────────────────────────────────
+
+
 function StatItem({ value, label, icon }) {
-  const [ref, count] = useCountUp(value);
+  const { ref, count } = useCountUp(value);
   const suffix = value.replace(/[\d,]/g, '');
   const prefix = value.startsWith('$') ? '$' : '';
 
@@ -188,27 +192,131 @@ function StatItem({ value, label, icon }) {
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
-function LandingPage() {
+const LandingPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
     window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
+
+    const onMouseMove = (e) => {
+      const cards = document.querySelectorAll('.feature-card');
+      cards.forEach(card => {
+        const rect = card.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        card.style.setProperty('--x', `${x}%`);
+        card.style.setProperty('--y', `${y}%`);
+      });
+    };
+    window.addEventListener('mousemove', onMouseMove);
+
+    // GSAP Animations
+    const ctx = gsap.context(() => {
+      // Register again just in case
+      gsap.registerPlugin(ScrollTrigger);
+
+      // Hero Animations
+      gsap.from('.hero-badge', { y: -20, opacity: 0, duration: 0.8, ease: 'back.out(1.7)' });
+      gsap.from('.hero-title', { y: 30, opacity: 0, duration: 1, delay: 0.2, ease: 'power4.out' });
+      gsap.from('.hero-sub', { y: 20, opacity: 0, duration: 1, delay: 0.4, ease: 'power3.out' });
+      gsap.from('.hero-actions', { y: 20, opacity: 0, duration: 1, delay: 0.6, ease: 'power3.out' });
+      gsap.from('.hero-social-proof', { opacity: 0, duration: 1, delay: 0.8 });
+      gsap.from('.hero-visual', { scale: 0.9, opacity: 0, duration: 1.2, delay: 0.5, ease: 'elastic.out(1, 0.75)' });
+
+      // Floating Orbs
+      gsap.to('.hero-orb', {
+        y: 'random(-40, 40)',
+        x: 'random(-40, 40)',
+        duration: 'random(3, 6)',
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut'
+      });
+
+      // Stats Animation
+      gsap.from('.stat-item', {
+        opacity: 0,
+        y: 20,
+        stagger: 0.1,
+        duration: 0.8,
+        scrollTrigger: {
+          trigger: '.stats-grid',
+          start: 'top 90%'
+        }
+      });
+
+      // Feature Cards Scroll Effect - Improved with stagger
+      gsap.from('.feature-card', {
+        opacity: 0,
+        y: 40,
+        stagger: 0.1,
+        duration: 0.8,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: '.features-grid',
+          start: 'top 85%',
+          toggleActions: 'play none none none'
+        }
+      });
+
+      // Pricing Cards
+      gsap.from('.pricing-card', {
+        opacity: 0,
+        y: 40,
+        stagger: 0.15,
+        duration: 1,
+        ease: 'back.out(1.4)',
+        scrollTrigger: {
+          trigger: '.pricing-grid',
+          start: 'top 85%',
+          toggleActions: 'play none none none'
+        }
+      });
+
+      // Step Cards
+      gsap.from('.step-card', {
+        opacity: 0,
+        x: -30,
+        stagger: 0.2,
+        duration: 0.8,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: '.steps-grid',
+          start: 'top 85%',
+          toggleActions: 'play none none none'
+        }
+      });
+
+      // Refresh scroll trigger after a small delay to ensure layout is settled
+      setTimeout(() => ScrollTrigger.refresh(), 500);
+    });
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('mousemove', onMouseMove);
+      ctx.revert();
+    };
   }, []);
 
   const goToLogin = () => navigate('/login');
 
   return (
-    <div className="landing-page">
+    <div className="landing-page" ref={containerRef}>
+      {/* ── SCROLL PROGRESS ── */}
+      <div className="scroll-progress" style={{
+        transform: `scaleX(${scrolled ? 1 : 0})`,
+        opacity: scrolled ? 1 : 0
+      }} />
 
       {/* ── NAVBAR ── */}
       <nav className={`landing-nav ${scrolled ? 'scrolled' : ''}`}>
         <div className="nav-container">
-          <div className="nav-brand">
+          <div className="nav-brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <div className="nav-logo"><Brain size={20} /></div>
             <span>LingoAI Expert</span>
           </div>
@@ -236,7 +344,6 @@ function LandingPage() {
 
       {/* ── HERO ── */}
       <section className="hero-section">
-        {/* Background */}
         <div className="hero-bg">
           <div className="hero-orb orb-1" />
           <div className="hero-orb orb-2" />
@@ -245,22 +352,24 @@ function LandingPage() {
         </div>
 
         <div className="hero-content">
-          <div className="hero-badge fade-in">
-            <Sparkles size={13} />
-            <span>Gemini AI bilan ishlaydi</span>
+          <div className="hero-badge">
+            <div className="badge-pulse" />
+            <Sparkles size={14} />
+            <span>Gemini 3.1 Flash-Lite bilan ishlaydi</span>
+            <div className="badge-tag">BETA</div>
           </div>
 
-          <h1 className="hero-title fade-in" style={{ animationDelay: '0.1s' }}>
-            O'qishni <span className="gradient-text">Yangi Darajaga</span>
-            <br />Olib Chiqing
+          <h1 className="hero-title">
+            Akademik muvaffaqiyatni <span className="gradient-text">AI bilan</span>
+            <br />birga zabt eting
           </h1>
 
-          <p className="hero-sub fade-in" style={{ animationDelay: '0.2s' }}>
+          <p className="hero-sub">
             Til, matematika, dasturlash va akademik fanlar bo'yicha
             <br />AI yordamida professional daraja ta'lim oling — bepul.
           </p>
 
-          <div className="hero-actions fade-in" style={{ animationDelay: '0.3s' }}>
+          <div className="hero-actions">
             <button className="hero-cta-primary" onClick={goToLogin}>
               <Zap size={18} /> Bepul boshlash
             </button>
@@ -269,7 +378,7 @@ function LandingPage() {
             </button>
           </div>
 
-          <div className="hero-social-proof fade-in" style={{ animationDelay: '0.4s' }}>
+          <div className="hero-social-proof">
             <div className="proof-avatars">
               {['JT', 'MY', 'BR', 'AK', 'ZN'].map((a, i) => (
                 <div key={i} className="proof-avatar" style={{ zIndex: 5 - i }}>
@@ -284,8 +393,7 @@ function LandingPage() {
           </div>
         </div>
 
-        {/* Hero Card Preview */}
-        <div className="hero-visual fade-in" style={{ animationDelay: '0.5s' }}>
+        <div className="hero-visual">
           <div className="chat-preview-card">
             <div className="preview-header">
               <div className="preview-dot red" /><div className="preview-dot yellow" /><div className="preview-dot green" />
@@ -295,10 +403,12 @@ function LandingPage() {
               <div className="preview-msg user">Ingliz tili Present Perfect ni tushuntirib ber</div>
               <div className="preview-msg ai">
                 <div className="preview-ai-badge"><Brain size={12} /> AI</div>
-                <strong>Present Perfect</strong> — o'tgan harakatni hozirgi natija bilan bog'laydi.<br /><br />
-                📌 <em>Tuzilishi:</em> Subject + <strong>have/has</strong> + V3<br />
-                ✅ I <strong>have finished</strong> my homework.<br />
-                ✅ She <strong>has visited</strong> London.
+                <p><strong>Present Perfect</strong> — o'tgan harakatni hozirgi natija bilan bog'laydi.</p>
+                <div className="mt-2 space-y-1">
+                  <p>📌 <em>Tuzilishi:</em> Subject + <strong>have/has</strong> + V3</p>
+                  <p>✅ I <strong>have finished</strong> my homework.</p>
+                  <p>✅ She <strong>has visited</strong> London.</p>
+                </div>
                 <div className="preview-typing">
                   <span /><span /><span />
                 </div>
@@ -312,7 +422,14 @@ function LandingPage() {
       <section className="stats-section" id="stats">
         <div className="section-container">
           <div className="stats-grid">
-            {STATS.map((s, i) => <StatItem key={i} {...s} />)}
+            {STATS.map((s, i) => (
+              <StatItem
+                key={i}
+                value={s.value}
+                label={s.label}
+                icon={s.icon}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -332,7 +449,7 @@ function LandingPage() {
 
           <div className="features-grid">
             {FEATURES.map((f, i) => (
-              <div className="feature-card" key={i} style={{ animationDelay: `${i * 0.08}s` }}>
+              <div className="feature-card" key={i} id={`feature-${i}`}>
                 <div className="feature-icon" style={{ background: f.bg, color: f.color }}>
                   {f.icon}
                 </div>

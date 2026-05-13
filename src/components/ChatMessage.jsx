@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
-import { Brain, Star, Copy, Check, Volume2, RotateCcw, ChevronDown, ChevronUp, Code, BookOpen, Calculator, Languages, Sparkles } from 'lucide-react';
+import { Brain, Star, Copy, Check, Volume2, RotateCcw, ChevronDown, ChevronUp, Code, BookOpen, Calculator, Languages, Sparkles, Mic, Paperclip } from 'lucide-react';
 import Mermaid from './Mermaid';
 import VibeEditor from './VibeEditor';
 import { jsPDF } from 'jspdf';

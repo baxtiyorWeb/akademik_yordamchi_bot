@@ -74,9 +74,7 @@ export async function uploadToGemini(file) {
 export async function streamGeminiResponse(prompt, history = [], attachment = null, mode = 'TUTOR', onChunk) {
   const modelList = mode === 'CODER' ? MODELS.HEAVY : MODELS.MEDIUM;
   const system = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.TUTOR;
-  const apiKey = ENV_KEYS[0];
-  const model = modelList[0];
-
+  
   const isFileReq = prompt.toLowerCase().includes('pdf') || prompt.toLowerCase().includes('fayl') || prompt.toLowerCase().includes('word') || prompt.toLowerCase().includes('slayd');
   const finalPrompt = isFileReq 
     ? `[SYSTEM REMINDER: SENDA FAYL YARATISH QOBILIYATI BOR. JAVOB OXIRIDA [EXPORT_FILE: ...] TEGINI QO'LLASHNI UNUTMA!]\n${prompt}` 
@@ -89,7 +87,6 @@ export async function streamGeminiResponse(prompt, history = [], attachment = nu
     const mimeType = attachment.type;
     const data = b64Data.split(',')[1];
     
-    // Rasm, Audio va Videoni qo'llab-quvvatlash
     currentParts.push({
       inline_data: {
         mime_type: mimeType,
@@ -111,49 +108,61 @@ export async function streamGeminiResponse(prompt, history = [], attachment = nu
     generationConfig: { temperature: 0.7, maxOutputTokens: 10000 }
   };
 
-  try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+  const model = modelList[0];
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || `HTTP error ${response.status}`);
-    }
+  // Kalitlarni aylantirish (Rotation)
+  for (const apiKey of ENV_KEYS) {
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let fullText = "";
-    let buffer = "";
+      if (response.status === 429) {
+        console.warn(`API key ${apiKey.substring(0, 5)}... quota exceeded, trying next...`);
+        continue; // Keyingi kalitga o'tish
+      }
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `HTTP error ${response.status}`);
+      }
 
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() || "";
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+      let buffer = "";
 
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          try {
-            const data = JSON.parse(line.substring(6));
-            const textChunk = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (textChunk) {
-              fullText += textChunk;
-              onChunk(fullText);
-            }
-          } catch (e) { }
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.substring(6));
+              const textChunk = data.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (textChunk) {
+                fullText += textChunk;
+                onChunk(fullText);
+              }
+            } catch (e) { }
+          }
         }
       }
+      return fullText; // Muvaffaqiyatli yakunlandi
+    } catch (err) {
+      console.error(`Error with key ${apiKey.substring(0, 5)}...:`, err);
+      if (apiKey === ENV_KEYS[ENV_KEYS.length - 1]) {
+        // Oxirgi kalit ham xato bersa, xatolikni qaytaramiz
+        throw err;
+      }
     }
-    return fullText;
-  } catch (err) {
-    console.error("Streaming error:", err);
-    // Xatolik bo'lsa oddiy usulga qaytish
-    return fetchGeminiResponse(prompt, history, attachment, mode);
   }
 }
 
