@@ -66,8 +66,17 @@ function TutorChat({ session }) {
     setLogoClicks(prev => {
       const next = prev + 1;
       if (next >= 3) {
-        setVibeMode(!vibeMode);
-        toast.info(vibeMode ? "Engine Vibe O'chirildi" : "Engine Vibe Yoqildi! ✨");
+        const newVibe = !vibeMode;
+        setVibeMode(newVibe);
+        toast.info(newVibe ? "Engine Vibe Yoqildi! ✨" : "Engine Vibe O'chirildi");
+        
+        if (audioRef.current) {
+          if (newVibe) {
+            audioRef.current.play().catch(e => console.log("Audio play blocked", e));
+          } else {
+            audioRef.current.pause();
+          }
+        }
         return 0;
       }
       return next;
@@ -81,16 +90,6 @@ function TutorChat({ session }) {
     // 1 soniyadan keyin clicklarni tozalash
     setTimeout(() => setLogoClicks(0), 1000);
   };
-
-  useEffect(() => {
-    if (audioRef.current) {
-      if (vibeMode) {
-        audioRef.current.play().catch(e => console.log("Audio play blocked"));
-      } else {
-        audioRef.current.pause();
-      }
-    }
-  }, [vibeMode]);
 
   const credits = profile?.credits || 0;
 
@@ -424,7 +423,7 @@ function TutorChat({ session }) {
   return (
     <div className={`tutor-layout ${vibeMode ? 'vibe-active' : ''}`}>
       {vibeMode && <VibeBackground />}
-      <audio ref={audioRef} loop src="https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3" />
+      <audio ref={audioRef} loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" />
 
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
       {!vibeMode && (

@@ -50,7 +50,7 @@ ENV_KEYS.forEach((_, i) => {
 export async function uploadToGemini(file) {
   const apiKey = ENV_KEYS[0];
   const url = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`;
-  
+
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -65,7 +65,7 @@ export async function uploadToGemini(file) {
       // Aks holda Files API.
     });
     // ...
-  } catch (e) {}
+  } catch (e) { }
 }
 
 /**
@@ -74,19 +74,19 @@ export async function uploadToGemini(file) {
 export async function streamGeminiResponse(prompt, history = [], attachment = null, mode = 'TUTOR', onChunk) {
   const modelList = mode === 'CODER' ? MODELS.HEAVY : MODELS.MEDIUM;
   const system = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.TUTOR;
-  
+
   const isFileReq = prompt.toLowerCase().includes('pdf') || prompt.toLowerCase().includes('fayl') || prompt.toLowerCase().includes('word') || prompt.toLowerCase().includes('slayd');
-  const finalPrompt = isFileReq 
-    ? `[SYSTEM REMINDER: SENDA FAYL YARATISH QOBILIYATI BOR. JAVOB OXIRIDA [EXPORT_FILE: ...] TEGINI QO'LLASHNI UNUTMA!]\n${prompt}` 
+  const finalPrompt = isFileReq
+    ? `[SYSTEM REMINDER: SENDA FAYL YARATISH QOBILIYATI BOR. JAVOB OXIRIDA [EXPORT_FILE: ...] TEGINI QO'LLASHNI UNUTMA!]\n${prompt}`
     : prompt;
 
   const currentParts = [{ text: finalPrompt }];
-  
+
   if (attachment) {
     const b64Data = await fileToBase64(attachment);
     const mimeType = attachment.type;
     const data = b64Data.split(',')[1];
-    
+
     currentParts.push({
       inline_data: {
         mime_type: mimeType,
@@ -108,59 +108,65 @@ export async function streamGeminiResponse(prompt, history = [], attachment = nu
     generationConfig: { temperature: 0.7, maxOutputTokens: 10000 }
   };
 
-  const model = modelList[0];
+  // Modellar va kalitlarni aylantirish (Rotation)
+  for (const model of modelList) {
+    for (const apiKey of ENV_KEYS) {
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
-  // Kalitlarni aylantirish (Rotation)
-  for (const apiKey of ENV_KEYS) {
-    try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+        if (response.status === 429) {
+          console.warn(`API key ${apiKey.substring(0, 5)}... quota exceeded, trying next...`);
+          continue; // Keyingi kalitga o'tish
+        }
 
-      if (response.status === 429) {
-        console.warn(`API key ${apiKey.substring(0, 5)}... quota exceeded, trying next...`);
-        continue; // Keyingi kalitga o'tish
-      }
+        if (response.status === 404) {
+          console.warn(`Model ${model} not found with key ${apiKey.substring(0, 5)}..., trying next model/key...`);
+          continue;
+        }
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `HTTP error ${response.status}`);
-      }
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error(`Gemini Error (${model}):`, errorData);
+          continue; // Keyingi variantga o'tish
+        }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let fullText = "";
-      let buffer = "";
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = "";
+        let buffer = "";
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
 
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.substring(6));
-              const textChunk = data.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (textChunk) {
-                fullText += textChunk;
-                onChunk(fullText);
-              }
-            } catch (e) { }
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              try {
+                const data = JSON.parse(line.substring(6));
+                const textChunk = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (textChunk) {
+                  fullText += textChunk;
+                  onChunk(fullText);
+                }
+              } catch (e) { }
+            }
           }
         }
-      }
-      return fullText; // Muvaffaqiyatli yakunlandi
-    } catch (err) {
-      console.error(`Error with key ${apiKey.substring(0, 5)}...:`, err);
-      if (apiKey === ENV_KEYS[ENV_KEYS.length - 1]) {
-        // Oxirgi kalit ham xato bersa, xatolikni qaytaramiz
-        throw err;
+        return fullText; // Muvaffaqiyatli yakunlandi
+      } catch (err) {
+        console.error(`Error with model ${model} and key ${apiKey.substring(0, 5)}...:`, err);
+        // Agar bu oxirgi model va oxirgi kalit bo'lsa, xatoni otamiz
+        if (model === modelList[modelList.length - 1] && apiKey === ENV_KEYS[ENV_KEYS.length - 1]) {
+          throw err;
+        }
       }
     }
   }
@@ -171,17 +177,17 @@ export async function fetchGeminiResponse(prompt, history = [], attachment = nul
   const system = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.TUTOR;
 
   const isFileReq = prompt.toLowerCase().includes('pdf') || prompt.toLowerCase().includes('fayl') || prompt.toLowerCase().includes('word') || prompt.toLowerCase().includes('slayd');
-  const finalPrompt = isFileReq 
-    ? `[SYSTEM REMINDER: SENDA FAYL YARATISH QOBILIYATI BOR. JAVOB OXIRIDA [EXPORT_FILE: ...] TEGINI QO'LLASHNI UNUTMA!]\n${prompt}` 
+  const finalPrompt = isFileReq
+    ? `[SYSTEM REMINDER: SENDA FAYL YARATISH QOBILIYATI BOR. JAVOB OXIRIDA [EXPORT_FILE: ...] TEGINI QO'LLASHNI UNUTMA!]\n${prompt}`
     : prompt;
 
   const currentParts = [{ text: finalPrompt }];
-  
+
   if (attachment) {
     const b64Data = await fileToBase64(attachment);
     const mimeType = attachment.type;
     const data = b64Data.split(',')[1];
-    
+
     currentParts.push({
       inline_data: {
         mime_type: mimeType,

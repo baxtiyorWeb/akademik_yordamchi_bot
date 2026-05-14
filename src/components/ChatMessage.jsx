@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
-import { Brain, Star, Copy, Check, Volume2, RotateCcw, ChevronDown, ChevronUp, Code, BookOpen, Calculator, Languages, Sparkles, Mic, Paperclip } from 'lucide-react';
+import { Brain, Star, Copy, Check, Volume2, RotateCcw, ChevronDown, ChevronUp, Code, BookOpen, Calculator, Languages, Sparkles, Mic, Paperclip, Zap } from 'lucide-react';
 import Mermaid from './Mermaid';
 import VibeEditor from './VibeEditor';
 import { jsPDF } from 'jspdf';
@@ -63,7 +63,7 @@ const ChatMessage = React.memo(({ msg, previousMsg, onSave, onRegenerate, onAuto
     // Regex ni yanada moslashuvchan qilamiz (probellar va qator ko'chishlariga chidamli)
     const exportRegex = /\[EXPORT_FILE:\s*(PDF|DOCX|PPTX)\s*\|\s*([\s\S]*?)\s*\|\s*([\s\S]*?)\]/i;
     const exportMatch = content.match(exportRegex);
-    
+
     let cleaned = content.replace(/\[PHASE: (.*?)\]/g, '');
     let exportInfo = null;
 
@@ -123,7 +123,7 @@ const ChatMessage = React.memo(({ msg, previousMsg, onSave, onRegenerate, onAuto
       // Wordga tushishi uchun HTML formatida clipboardga yozish
       const blob = new Blob([fullMathML], { type: 'text/html' });
       const data = [new ClipboardItem({ 'text/html': blob })];
-      
+
       navigator.clipboard.write(data).then(() => {
         toast.success("Formulalar Word uchun nusxalandi! Wordga o'tib Ctrl+V bosing.");
       });
@@ -138,22 +138,22 @@ const ChatMessage = React.memo(({ msg, previousMsg, onSave, onRegenerate, onAuto
       if (displayedText.length < cleanContent.length) {
         const diff = cleanContent.length - displayedText.length;
         // Agar juda orqada qolib ketsak tezroq qo'shamiz
-        const charsToAdd = diff > 50 ? 5 : diff > 15 ? 2 : 1; 
-        
+        const charsToAdd = diff > 50 ? 5 : diff > 15 ? 2 : 1;
+
         const timeout = setTimeout(() => {
           setDisplayedText(prev => cleanContent.slice(0, prev.length + charsToAdd));
-          
+
           // Yozilayotganda avtomatik pastga tushish (scroll)
           const scrollContainer = document.querySelector('.chat-messages') || document.querySelector('.kids-messages') || document.querySelector('.tutor-main');
           if (scrollContainer) {
-             const isNearBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < 200;
-             if (isNearBottom) {
-                // Tez-tez smooth chaqirish xato ishlashiga olib kelishi mumkin, shuning uchun to'g'ridan to'g'ri beramiz yoki ozroq smooth
-                scrollContainer.scrollTop = scrollContainer.scrollHeight;
-             }
+            const isNearBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < 200;
+            if (isNearBottom) {
+              // Tez-tez smooth chaqirish xato ishlashiga olib kelishi mumkin, shuning uchun to'g'ridan to'g'ri beramiz yoki ozroq smooth
+              scrollContainer.scrollTop = scrollContainer.scrollHeight;
+            }
           }
         }, 15); // Harf yozilish tezligi
-        
+
         return () => clearTimeout(timeout);
       }
     } else {
@@ -173,7 +173,7 @@ const ChatMessage = React.memo(({ msg, previousMsg, onSave, onRegenerate, onAuto
           <div className="math-block-container" style={{ position: 'relative', margin: '15px 0' }}>
             <div dangerouslySetInnerHTML={{ __html: katex.renderToString(codeStr, { displayMode: true, throwOnError: false }) }} />
             {isMathRequested && (
-              <button 
+              <button
                 onClick={() => {
                   const mathml = katex.renderToString(codeStr, { displayMode: true, output: 'mathml' });
                   const blob = new Blob([`<div>${mathml}</div>`], { type: 'text/html' });
@@ -257,11 +257,11 @@ const ChatMessage = React.memo(({ msg, previousMsg, onSave, onRegenerate, onAuto
     td: ({ children }) => <td style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)', color: '#cbd5e1' }}>{children}</td>,
     tr: ({ children }) => <tr style={{ transition: 'background 0.2s', '&:hover': { background: 'rgba(255,255,255,0.02)' } }}>{children}</tr>,
     blockquote: ({ children }) => (
-      <blockquote style={{ 
-        borderLeft: '4px solid #8b5cf6', 
-        background: 'rgba(139, 92, 246, 0.1)', 
-        margin: '16px 0', 
-        padding: '12px 16px', 
+      <blockquote style={{
+        borderLeft: '4px solid #8b5cf6',
+        background: 'rgba(139, 92, 246, 0.1)',
+        margin: '16px 0',
+        padding: '12px 16px',
         borderRadius: '0 12px 12px 0',
         color: '#e2e8f0',
         boxShadow: 'inset 0 0 20px rgba(139, 92, 246, 0.05)'
@@ -388,11 +388,11 @@ const ChatMessage = React.memo(({ msg, previousMsg, onSave, onRegenerate, onAuto
 
   return (
     <div className={`chat-bubble-wrapper ${msg.role} fade-in`} style={{ position: 'relative' }}>
-      <div 
+      <div
         ref={messageRef}
-        className={`chat-bubble ${msg.role} ${isAI ? 'ai-glow' : ''}`} 
-        style={{ 
-          position: 'relative', 
+        className={`chat-bubble ${msg.role} ${isAI ? 'ai-glow' : ''}`}
+        style={{
+          position: 'relative',
           padding: isAI ? '20px' : undefined,
           boxShadow: isAI && !isKids ? '0 10px 30px -10px rgba(99, 102, 241, 0.2)' : undefined,
           border: isAI && isKids ? '3px solid #bfdbfe' : undefined,
@@ -400,47 +400,47 @@ const ChatMessage = React.memo(({ msg, previousMsg, onSave, onRegenerate, onAuto
           color: isKids ? '#334155' : undefined,
         }}
       >
-          {exportData && (
-            <div style={{ 
-              marginTop: 15, 
-              padding: 16, 
-              background: 'rgba(99, 102, 241, 0.1)', 
-              borderRadius: 16, 
-              border: '1px solid rgba(99, 102, 241, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 12,
-              animation: 'slideUp 0.3s ease'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                  {exportData.type === 'PDF' ? <BookOpen size={20} /> : <Zap size={20} />}
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#fff' }}>{exportData.title}</div>
-                  <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{exportData.type} formatida tayyor</div>
-                </div>
+        {exportData && (
+          <div style={{
+            marginTop: 15,
+            padding: 16,
+            background: 'rgba(99, 102, 241, 0.1)',
+            borderRadius: 16,
+            border: '1px solid rgba(99, 102, 241, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            animation: 'slideUp 0.3s ease'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                {exportData.type === 'PDF' ? <BookOpen size={20} /> : <Zap size={20} />}
               </div>
-              <button 
-                onClick={handleExport}
-                style={{ 
-                  padding: '8px 16px', 
-                  background: '#6366f1', 
-                  color: '#fff', 
-                  border: 'none', 
-                  borderRadius: 10, 
-                  fontSize: '0.8rem', 
-                  fontWeight: 600, 
-                  cursor: 'pointer' 
-                }}
-              >
-                Yuklab olish
-              </button>
+              <div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#fff' }}>{exportData.title}</div>
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{exportData.type} formatida tayyor</div>
+              </div>
             </div>
-          )}
+            <button
+              onClick={handleExport}
+              style={{
+                padding: '8px 16px',
+                background: '#6366f1',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 10,
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              Yuklab olish
+            </button>
+          </div>
+        )}
 
-          <div style={{ overflow: content.length > 800 && !expanded ? 'hidden' : 'visible', maxHeight: content.length > 800 && !expanded ? 200 : 'none', transition: 'max-height 0.3s ease' }}>
+        <div style={{ overflow: content.length > 800 && !expanded ? 'hidden' : 'visible', maxHeight: content.length > 800 && !expanded ? 200 : 'none', transition: 'max-height 0.3s ease' }}>
           {msg.attachment && (
             <div style={{ marginBottom: 15, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)' }}>
               {msg.attachmentType?.startsWith('image/') ? (
@@ -455,7 +455,7 @@ const ChatMessage = React.memo(({ msg, previousMsg, onSave, onRegenerate, onAuto
                 </div>
               ) : msg.attachmentType?.startsWith('video/') ? (
                 <div style={{ position: 'relative' }}>
-                   <video src={msg.attachment} controls style={{ width: '100%', display: 'block', maxHeight: 400 }} />
+                  <video src={msg.attachment} controls style={{ width: '100%', display: 'block', maxHeight: 400 }} />
                 </div>
               ) : (
                 <div style={{ padding: 12, display: 'flex', alignItems: 'center', gap: 10, color: '#94a3b8', fontSize: 13 }}>
@@ -495,13 +495,13 @@ const ChatMessage = React.memo(({ msg, previousMsg, onSave, onRegenerate, onAuto
                 <Sigma size={13} /> Word Formula
               </ActionBtn>
             )}
-            
-            <div className="export-selection" style={{ 
-              display: 'flex', 
-              gap: 4, 
-              alignItems: 'center', 
-              background: 'rgba(99, 102, 241, 0.1)', 
-              padding: '4px 10px', 
+
+            <div className="export-selection" style={{
+              display: 'flex',
+              gap: 4,
+              alignItems: 'center',
+              background: 'rgba(99, 102, 241, 0.1)',
+              padding: '4px 10px',
               borderRadius: 30,
               border: '1px solid rgba(99, 102, 241, 0.2)'
             }}>
@@ -531,16 +531,16 @@ const ActionBtn = ({ onClick, children, title, active, color }) => (
 );
 
 const ExportIconBtn = ({ onClick, icon, color, label }) => (
-  <button 
-    onClick={onClick} 
+  <button
+    onClick={onClick}
     title={label}
-    style={{ 
-      background: 'none', 
-      border: 'none', 
-      color: color, 
-      cursor: 'pointer', 
-      display: 'flex', 
-      alignItems: 'center', 
+    style={{
+      background: 'none',
+      border: 'none',
+      color: color,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
       gap: 3,
       padding: '2px 6px',
       borderRadius: 4,
