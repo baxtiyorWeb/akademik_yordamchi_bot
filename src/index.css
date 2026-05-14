@@ -1,76 +1,53 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
 
-:root {
-  --primary: #6366f1;
-  --primary-light: #818cf8;
-  --primary-glow: rgba(99, 102, 241, 0.35);
-  --secondary: #8b5cf6;
-  --accent: #10b981;
-  --bg-main: #020617;
-  --sidebar-bg: #080f1e;
-  --card-bg: rgba(15, 23, 42, 0.8);
-  --border-color: rgba(255, 255, 255, 0.07);
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-faint: #475569;
-  --text-hint: #334155;
-  --glass: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.07);
-  --radius: 12px;
-  --radius-md: 16px;
-  --radius-lg: 20px;
+@theme {
+  --color-primary: #ff6b35; /* Blossom-ga xos to'q sariq urg'u */
+  --color-primary-dark: #e85d2a;
+  
+  /* Blossom Light Theme */
+  --color-bg-main: #f0f2f5;
+  --color-bg-sidebar: #ffffff;
+  --color-bg-card: #ffffff;
+  --color-text-main: #1a1a1a;
+  --color-text-muted: #6b7280;
+  --color-border-custom: #e5e7eb;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@layer base {
+  body {
+    @apply bg-bg-main text-text-main font-sans overflow-hidden antialiased;
+  }
 }
 
-body {
-  font-family: 'Inter', sans-serif;
-  color: var(--text-main);
-  background: var(--bg-main);
-  min-height: 100vh;
-  margin: 0;
-  line-height: 1.6;
-  overflow-x: hidden;
+@layer components {
+  .blossom-card {
+    @apply bg-white rounded-[32px] border border-border-custom shadow-sm;
+  }
+  
+  .blossom-sidebar-item {
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 cursor-pointer;
+  }
+
+  .blossom-sidebar-item.active {
+    @apply bg-gray-100 text-text-main;
+  }
+
+  .blossom-sidebar-item:not(.active) {
+    @apply text-gray-500 hover:bg-gray-50 hover:text-text-main;
+  }
+
+  .blossom-input-shadow {
+    shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+  }
 }
 
-#root {
-  display: flex;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
 }
-
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.2);
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
   border-radius: 10px;
-}
-
-.fade-in {
-  animation: fadeIn 0.3s ease-out forwards;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Mermaid Global Fixes */
-.mermaid-error-p, 
-.mermaid-error, 
-.mermaidTooltip, 
-.mermaid-error-icon,
-[id^='dmermaid'], 
-[id^='mermaid-render'] .error {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  position: absolute !important;
-  top: -9999px !important;
 }

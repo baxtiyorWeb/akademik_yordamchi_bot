@@ -1,7 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Globe } from 'lucide-react';
-import './LanguageSwitcher.css';
 
 function LanguageSwitcher() {
   const { i18n } = useTranslation();
@@ -12,12 +11,12 @@ function LanguageSwitcher() {
   };
 
   return (
-    <div className="language-switcher">
-      <Globe size={18} className="lang-icon" />
+    <div className="flex items-center gap-2 px-3 py-2 bg-bg-main border border-border-custom rounded-xl transition-all hover:border-primary group">
+      <Globe size={16} className="text-text-muted group-hover:text-primary transition-colors" />
       <select 
         value={i18n.language} 
         onChange={(e) => changeLanguage(e.target.value)}
-        className="lang-select"
+        className="bg-transparent border-none outline-none text-xs font-bold text-text-main cursor-pointer appearance-none"
       >
         <option value="uz">UZ</option>
         <option value="ru">RU</option>

@@ -3,14 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import {
   Brain, Sparkles, BookOpen, Zap, Star, Shield,
   ChevronRight, Menu, X, ArrowRight, Check,
-  Globe, Calculator, Code2, PenTool, MessageSquare, TrendingUp,
+  Globe, Code2, MessageSquare, TrendingUp,
   FileText, Notebook
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import './LandingPage.css';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -23,59 +22,51 @@ const NAV_LINKS = [
 const FEATURES = [
   {
     icon: <Zap size={24} />,
-    color: "#0ea5e9",
-    bg: "rgba(14,165,233,0.12)",
+    color: "text-sky-500",
+    bg: "bg-sky-500/10",
     title: "Gemini 3.1 Flash-Lite",
     desc: "2026-yilning eng yangi va tezkor multimodal AI modeli yordamida daqiqa ichida javob oling.",
     tags: ["Fast", "Multimodal", "2026"],
   },
   {
     icon: <Brain size={24} />,
-    color: "#a855f7",
-    bg: "rgba(168,85,247,0.12)",
+    color: "text-purple-500",
+    bg: "bg-purple-500/10",
     title: "Thinking Engine",
     desc: "Murakkab matematik va ilmiy masalalarni qadamba-qadam mantiqiy tahlil qilish tizimi.",
     tags: ["Reasoning", "Step-by-Step", "Logic"],
   },
   {
     icon: <FileText size={24} />,
-    color: "#10b981",
-    bg: "rgba(16,185,129,0.12)",
+    color: "text-emerald-500",
+    bg: "bg-emerald-500/10",
     title: "Multimodal Tahlil",
     desc: "Faqat matn emas, balki PDF, Video va Audio fayllarni chat ichida tahlil qiling.",
     tags: ["PDF", "Video", "Audio"],
   },
   {
     icon: <Code2 size={24} />,
-    color: "#f59e0b",
-    bg: "rgba(245,158,11,0.12)",
+    color: "text-amber-500",
+    bg: "bg-amber-500/10",
     title: "Vibe Coding",
     desc: "AI tomonidan yaratilgan kodlarni real vaqtda brauzerda ishga tushiring va natijani ko'ring.",
     tags: ["Live Preview", "Coding", "Fix"],
   },
   {
     icon: <Notebook size={24} />,
-    color: "#ec4899",
-    bg: "rgba(236,72,153,0.12)",
+    color: "text-pink-500",
+    bg: "bg-pink-500/10",
     title: "Aqlli Daftar",
     desc: "Muhim akademik ma'lumotlarni konspekt qiling va bulutli xotirada saqlang.",
     tags: ["Notes", "Cloud", "Academic"],
   },
   {
     icon: <Star size={24} />,
-    color: "#eab308",
-    bg: "rgba(234,179,8,0.12)",
+    color: "text-yellow-500",
+    bg: "bg-yellow-500/10",
     title: "AI Quiz Generator",
     desc: "O'quv materiallaringiz asosida avtomatik testlar va savollar to'plamini yarating.",
     tags: ["Quiz", "Exam", "Prep"],
-  },
-  {
-    icon: <FileText size={24} />,
-    color: "#06b6d4",
-    bg: "rgba(6,182,212,0.12)",
-    title: "Eksport Markazi",
-    desc: "AI javoblarini bir soniyada PDF, Word, Excel yoki Slayd (PPTX) formatlariga aylantiring.",
-    tags: ["PDF", "Word", "Excel", "PPTX"],
   },
 ];
 
@@ -114,44 +105,13 @@ const PLANS = [
   },
 ];
 
-const TESTIMONIALS = [
-  {
-    name: "Jasur Toshmatov",
-    role: "IELTS tayyorgarlik",
-    avatar: "JT",
-    color: "#6366f1",
-    text: "IELTS 7.0 ball oldim! LingoAI menga Writing va Speaking da juda katta yordam berdi. Ustozdan ham yaxshiroq tushuntiradi!",
-    rating: 5,
-  },
-  {
-    name: "Malika Yusupova",
-    role: "Universitet 2-kurs",
-    avatar: "MY",
-    color: "#10b981",
-    text: "Matematika imtihonlarimga tayyorlanishda zo'r yordam bo'ldi. Har bir qadamni batafsil tushuntiradi, juda qulay.",
-    rating: 5,
-  },
-  {
-    name: "Bobur Rahimov",
-    role: "Junior Developer",
-    avatar: "BR",
-    color: "#3b82f6",
-    text: "Python o'rganishda eng yaxshi platforma. Kodlarimni tekshirib, xatolarni tushuntiradi. Juda tavsiya qilaman!",
-    rating: 5,
-  },
-];
-
-// ── Counter Animation Hook ────────────────────────────────────────────────────
 function useCountUp(target, duration = 2000) {
   const [count, setCount] = useState(0);
   const [started, setStarted] = useState(false);
   const ref = useRef(null);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setStarted(true); },
-      { threshold: 0.3 }
-    );
+    const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) setStarted(true); }, { threshold: 0.3 });
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
   }, []);
@@ -173,132 +133,43 @@ function useCountUp(target, duration = 2000) {
   return { ref, count };
 }
 
-
-
 function StatItem({ value, label, icon }) {
   const { ref, count } = useCountUp(value);
   const suffix = value.replace(/[\d,]/g, '');
   const prefix = value.startsWith('$') ? '$' : '';
-
   return (
-    <div className="stat-item" ref={ref}>
-      <div className="stat-icon">{icon}</div>
-      <div className="stat-value">
+    <div className="flex flex-col items-center text-center p-6 bg-white rounded-3xl shadow-sm border border-border-custom" ref={ref}>
+      <div className="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4">{icon}</div>
+      <div className="text-3xl font-black text-text-main mb-1">
         {prefix}{value.includes(',') ? count.toLocaleString() : count}{suffix}
       </div>
-      <div className="stat-label">{label}</div>
+      <div className="text-xs font-bold text-text-muted uppercase tracking-wider">{label}</div>
     </div>
   );
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
 const LandingPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const containerRef = useRef(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
     window.addEventListener('scroll', onScroll);
 
-    const onMouseMove = (e) => {
-      const cards = document.querySelectorAll('.feature-card');
-      cards.forEach(card => {
-        const rect = card.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-        card.style.setProperty('--x', `${x}%`);
-        card.style.setProperty('--y', `${y}%`);
-      });
-    };
-    window.addEventListener('mousemove', onMouseMove);
-
-    // GSAP Animations
     const ctx = gsap.context(() => {
-      // Register again just in case
-      gsap.registerPlugin(ScrollTrigger);
-
-      // Hero Animations
-      gsap.from('.hero-badge', { y: -20, opacity: 0, duration: 0.8, ease: 'back.out(1.7)' });
-      gsap.from('.hero-title', { y: 30, opacity: 0, duration: 1, delay: 0.2, ease: 'power4.out' });
-      gsap.from('.hero-sub', { y: 20, opacity: 0, duration: 1, delay: 0.4, ease: 'power3.out' });
-      gsap.from('.hero-actions', { y: 20, opacity: 0, duration: 1, delay: 0.6, ease: 'power3.out' });
-      gsap.from('.hero-social-proof', { opacity: 0, duration: 1, delay: 0.8 });
+      gsap.from('.hero-content > *', { y: 30, opacity: 0, stagger: 0.2, duration: 1, ease: 'power4.out' });
       gsap.from('.hero-visual', { scale: 0.9, opacity: 0, duration: 1.2, delay: 0.5, ease: 'elastic.out(1, 0.75)' });
-
-      // Floating Orbs
-      gsap.to('.hero-orb', {
-        y: 'random(-40, 40)',
-        x: 'random(-40, 40)',
-        duration: 'random(3, 6)',
-        repeat: -1,
-        yoyo: true,
-        ease: 'sine.inOut'
-      });
-
-      // Stats Animation
-      gsap.from('.stat-item', {
-        opacity: 0,
-        y: 20,
-        stagger: 0.1,
-        duration: 0.8,
-        scrollTrigger: {
-          trigger: '.stats-grid',
-          start: 'top 90%'
-        }
-      });
-
-      // Feature Cards Scroll Effect - Improved with stagger
+      
       gsap.from('.feature-card', {
-        opacity: 0,
-        y: 40,
-        stagger: 0.1,
-        duration: 0.8,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: '.features-grid',
-          start: 'top 85%',
-          toggleActions: 'play none none none'
-        }
+        opacity: 0, y: 40, stagger: 0.1, duration: 0.8,
+        scrollTrigger: { trigger: '.features-grid', start: 'top 85%' }
       });
-
-      // Pricing Cards
-      gsap.from('.pricing-card', {
-        opacity: 0,
-        y: 40,
-        stagger: 0.15,
-        duration: 1,
-        ease: 'back.out(1.4)',
-        scrollTrigger: {
-          trigger: '.pricing-grid',
-          start: 'top 85%',
-          toggleActions: 'play none none none'
-        }
-      });
-
-      // Step Cards
-      gsap.from('.step-card', {
-        opacity: 0,
-        x: -30,
-        stagger: 0.2,
-        duration: 0.8,
-        ease: 'power2.out',
-        scrollTrigger: {
-          trigger: '.steps-grid',
-          start: 'top 85%',
-          toggleActions: 'play none none none'
-        }
-      });
-
-      // Refresh scroll trigger after a small delay to ensure layout is settled
-      setTimeout(() => ScrollTrigger.refresh(), 500);
     });
 
     return () => {
       window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('mousemove', onMouseMove);
       ctx.revert();
     };
   }, []);
@@ -306,294 +177,162 @@ const LandingPage = () => {
   const goToLogin = () => navigate('/login');
 
   return (
-    <div className="landing-page" ref={containerRef}>
-      {/* ── SCROLL PROGRESS ── */}
-      <div className="scroll-progress" style={{
-        transform: `scaleX(${scrolled ? 1 : 0})`,
-        opacity: scrolled ? 1 : 0
-      }} />
-
-      {/* ── NAVBAR ── */}
-      <nav className={`landing-nav ${scrolled ? 'scrolled' : ''}`}>
-        <div className="nav-container">
-          <div className="nav-brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="nav-logo"><Brain size={20} /></div>
-            <span>LingoAI Expert</span>
+    <div className="min-h-screen bg-bg-main font-sans selection:bg-primary/30">
+      
+      {/* NAVBAR */}
+      <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 backdrop-blur-xl py-3 shadow-lg' : 'bg-transparent py-6'}`}>
+        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg group-hover:rotate-12 transition-transform">
+              <Brain size={20} />
+            </div>
+            <span className="text-xl font-black text-text-main tracking-tight">Cortex AI</span>
           </div>
 
-          <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
-            {NAV_LINKS.map(l => (
-              <a key={l.label} href={l.href} onClick={() => setMenuOpen(false)}>
-                {l.label}
-              </a>
-            ))}
+          <div className="hidden lg:flex items-center gap-8">
+            {NAV_LINKS.map(l => <a key={l.label} href={l.href} className="text-sm font-bold text-text-muted hover:text-primary transition-colors">{l.label}</a>)}
           </div>
 
-          <div className="nav-actions">
+          <div className="flex items-center gap-3">
             <LanguageSwitcher />
-            <button className="nav-login-btn" onClick={goToLogin}>{t('login', 'Kirish')}</button>
-            <button className="nav-cta-btn" onClick={goToLogin}>
+            <button className="hidden sm:block text-sm font-bold text-text-main px-4 py-2 hover:bg-primary/5 rounded-xl transition-all" onClick={goToLogin}>{t('login', 'Kirish')}</button>
+            <button className="bg-primary text-white text-sm font-bold px-6 py-3 rounded-xl shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2" onClick={goToLogin}>
               Bepul boshlash <ChevronRight size={16} />
             </button>
-            <button className="nav-burger" onClick={() => setMenuOpen(v => !v)}>
-              {menuOpen ? <X size={22} /> : <Menu size={22} />}
+            <button className="lg:hidden p-2 text-text-main" onClick={() => setMenuOpen(!menuOpen)}>
+              {menuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
         </div>
+        
+        {/* MOBILE MENU */}
+        {menuOpen && (
+          <div className="lg:hidden fixed inset-0 top-[72px] bg-white z-40 p-6 flex flex-col gap-4 animate-in slide-in-from-top duration-300">
+             {NAV_LINKS.map(l => <a key={l.label} href={l.href} className="text-2xl font-bold text-text-main" onClick={() => setMenuOpen(false)}>{l.label}</a>)}
+             <button className="mt-4 w-full py-4 bg-primary text-white rounded-2xl font-bold" onClick={goToLogin}>Bepul boshlash</button>
+          </div>
+        )}
       </nav>
 
-      {/* ── HERO ── */}
-      <section className="hero-section">
-        <div className="hero-bg">
-          <div className="hero-orb orb-1" />
-          <div className="hero-orb orb-2" />
-          <div className="hero-orb orb-3" />
-          <div className="hero-grid" />
-        </div>
+      {/* HERO */}
+      <section className="relative pt-40 pb-20 px-6 overflow-hidden">
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[120px] animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-400/10 rounded-full blur-[120px] animate-pulse delay-1000"></div>
 
-        <div className="hero-content">
-          <div className="hero-badge">
-            <div className="badge-pulse" />
-            <Sparkles size={14} />
-            <span>Gemini 3.1 Flash-Lite bilan ishlaydi</span>
-            <div className="badge-tag">BETA</div>
-          </div>
-
-          <h1 className="hero-title">
-            Akademik muvaffaqiyatni <span className="gradient-text">AI bilan</span>
-            <br />birga zabt eting
-          </h1>
-
-          <p className="hero-sub">
-            Til, matematika, dasturlash va akademik fanlar bo'yicha
-            <br />AI yordamida professional daraja ta'lim oling — bepul.
-          </p>
-
-          <div className="hero-actions">
-            <button className="hero-cta-primary" onClick={goToLogin}>
-              <Zap size={18} /> Bepul boshlash
-            </button>
-            <button className="hero-cta-kids" onClick={() => navigate('/kids')} style={{ background: 'linear-gradient(135deg, #f472b6 0%, #ec4899 100%)', color: '#fff', border: 'none', padding: '14px 28px', borderRadius: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: 'transform 0.2s', boxShadow: '0 8px 20px rgba(236,72,153,0.3)' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
-              <Star size={18} fill="currentColor" /> {t('kids_mode', 'Bolalar rejimi')}
-            </button>
-          </div>
-
-          <div className="hero-social-proof">
-            <div className="proof-avatars">
-              {['JT', 'MY', 'BR', 'AK', 'ZN'].map((a, i) => (
-                <div key={i} className="proof-avatar" style={{ zIndex: 5 - i }}>
-                  {a}
-                </div>
-              ))}
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="hero-content relative z-10 text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-xs font-bold mb-8 animate-in fade-in slide-in-from-top-4">
+              <Sparkles size={14} fill="currentColor" /> <span>Gemini 3.1 Flash-Lite bilan ishlaydi</span>
+              <span className="bg-primary text-white px-1.5 py-0.5 rounded text-[9px] ml-1">BETA</span>
             </div>
-            <div className="proof-text">
-              <div className="proof-stars">{'★'.repeat(5)}</div>
-              <span>50,000+ foydalanuvchi ishonadi</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="hero-visual">
-          <div className="chat-preview-card">
-            <div className="preview-header">
-              <div className="preview-dot red" /><div className="preview-dot yellow" /><div className="preview-dot green" />
-              <span>LingoAI Expert</span>
-            </div>
-            <div className="preview-messages">
-              <div className="preview-msg user">Ingliz tili Present Perfect ni tushuntirib ber</div>
-              <div className="preview-msg ai">
-                <div className="preview-ai-badge"><Brain size={12} /> AI</div>
-                <p><strong>Present Perfect</strong> — o'tgan harakatni hozirgi natija bilan bog'laydi.</p>
-                <div className="mt-2 space-y-1">
-                  <p>📌 <em>Tuzilishi:</em> Subject + <strong>have/has</strong> + V3</p>
-                  <p>✅ I <strong>have finished</strong> my homework.</p>
-                  <p>✅ She <strong>has visited</strong> London.</p>
-                </div>
-                <div className="preview-typing">
-                  <span /><span /><span />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── STATS ── */}
-      <section className="stats-section" id="stats">
-        <div className="section-container">
-          <div className="stats-grid">
-            {STATS.map((s, i) => (
-              <StatItem
-                key={i}
-                value={s.value}
-                label={s.label}
-                icon={s.icon}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── FEATURES ── */}
-      <section className="features-section" id="features">
-        <div className="section-container">
-          <div className="section-header">
-            <div className="section-badge">Imkoniyatlar</div>
-            <h2 className="section-title">
-              Barcha fanlar, <span className="gradient-text">bir platformada</span>
-            </h2>
-            <p className="section-sub">
-              O'quv dasturingizga mos har qanday savol bering — AI daqiqa ichida javob beradi
+            <h1 className="text-5xl lg:text-7xl font-black text-text-main leading-[1.1] mb-6 tracking-tight">
+              Akademik muvaffaqiyatni <span className="text-primary italic">AI bilan</span> zabt eting
+            </h1>
+            <p className="text-lg lg:text-xl text-text-muted mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+              Til, matematika va dasturlash bo'yicha dunyodagi eng ilg'or AI agentlari yordamida bepul ta'lim oling.
             </p>
-          </div>
-
-          <div className="features-grid">
-            {FEATURES.map((f, i) => (
-              <div className="feature-card" key={i} id={`feature-${i}`}>
-                <div className="feature-icon" style={{ background: f.bg, color: f.color }}>
-                  {f.icon}
-                </div>
-                <h3 className="feature-title">{f.title}</h3>
-                <p className="feature-desc">{f.desc}</p>
-                <div className="feature-tags">
-                  {f.tags.map(t => (
-                    <span key={t} className="feature-tag" style={{ color: f.color, borderColor: f.color + '30', background: f.bg }}>
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── HOW IT WORKS ── */}
-      <section className="how-section">
-        <div className="section-container">
-          <div className="section-header">
-            <div className="section-badge">Qanday ishlaydi</div>
-            <h2 className="section-title">3 qadamda <span className="gradient-text">boshlang</span></h2>
-          </div>
-
-          <div className="steps-grid">
-            {[
-              { num: "01", title: "Hisob yarating", desc: "Email orqali 30 soniyada bepul hisob oching.", icon: <Shield size={22} /> },
-              { num: "02", title: "Savol yozing", desc: "Istalgan fan bo'yicha savolingizni erkin yozing.", icon: <MessageSquare size={22} /> },
-              { num: "03", title: "Javob oling", desc: "AI daqiqa ichida batafsil, tushunarli javob beradi.", icon: <Sparkles size={22} /> },
-            ].map((s, i) => (
-              <div className="step-card" key={i}>
-                <div className="step-num">{s.num}</div>
-                <div className="step-icon">{s.icon}</div>
-                <h3>{s.title}</h3>
-                <p>{s.desc}</p>
-                {i < 2 && <div className="step-arrow"><ArrowRight size={18} /></div>}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── TESTIMONIALS ── */}
-      <section className="testimonials-section">
-        <div className="section-container">
-          <div className="section-header">
-            <div className="section-badge">Fikrlar</div>
-            <h2 className="section-title">Foydalanuvchilar <span className="gradient-text">nima deydi</span></h2>
-          </div>
-
-          <div className="testimonials-grid">
-            {TESTIMONIALS.map((t, i) => (
-              <div className="testimonial-card" key={i}>
-                <div className="testimonial-stars">{'★'.repeat(t.rating)}</div>
-                <p className="testimonial-text">"{t.text}"</p>
-                <div className="testimonial-author">
-                  <div className="testimonial-avatar" style={{ background: t.color + '25', color: t.color }}>
-                    {t.avatar}
-                  </div>
-                  <div>
-                    <div className="testimonial-name">{t.name}</div>
-                    <div className="testimonial-role">{t.role}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── PRICING ── */}
-      <section className="pricing-section" id="pricing">
-        <div className="section-container">
-          <div className="section-header">
-            <div className="section-badge">Narxlar</div>
-            <h2 className="section-title">Sizga mos <span className="gradient-text">rejani tanlang</span></h2>
-            <p className="section-sub">Hech qanday yashirin to'lovlar yo'q</p>
-          </div>
-
-          <div className="pricing-grid">
-            {PLANS.map((plan, i) => (
-              <div className={`pricing-card ${plan.highlight ? 'highlighted' : ''}`} key={i}>
-                {plan.badge && <div className="pricing-badge">{plan.badge}</div>}
-                <div className="pricing-name">{plan.name}</div>
-                <div className="pricing-price">
-                  <span className="price-currency">UZS</span>
-                  <span className="price-amount">{plan.price}</span>
-                  <span className="price-period">/oy</span>
-                </div>
-                <p className="pricing-desc">{plan.desc}</p>
-                <ul className="pricing-features">
-                  {plan.features.map(f => (
-                    <li key={f}>
-                      <span className="check-icon"><Check size={13} /></span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  className={`pricing-btn ${plan.highlight ? 'primary' : 'secondary'}`}
-                  onClick={goToLogin}
-                >
-                  {plan.cta}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA BANNER ── */}
-      <section className="cta-section">
-        <div className="section-container">
-          <div className="cta-card">
-            <div className="cta-orb cta-orb-1" />
-            <div className="cta-orb cta-orb-2" />
-            <div className="cta-content">
-              <h2>Bugun boshlashga tayyor <span className="gradient-text">emassizmi?</span></h2>
-              <p>50,000+ foydalanuvchi bilan qo'shiling. Birinchi 50 ta kredit bepul!</p>
-              <button className="hero-cta-primary" onClick={goToLogin}>
-                <Sparkles size={18} /> Bepul hisob yaratish
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <button className="bg-primary text-white px-10 py-5 rounded-2xl font-bold text-lg shadow-2xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3" onClick={goToLogin}>
+                <Zap size={22} fill="currentColor" /> Bepul boshlash
+              </button>
+              <button className="bg-white border border-border-custom text-text-main px-10 py-5 rounded-2xl font-bold text-lg hover:bg-primary/5 transition-all" onClick={() => navigate('/kids')}>
+                 Bolalar rejimi ✨
               </button>
             </div>
           </div>
+
+          <div className="hero-visual relative lg:block hidden">
+            <div className="bg-white/80 backdrop-blur-3xl rounded-[40px] p-8 shadow-2xl border border-white/50 rotate-3 transform-gpu hover:rotate-0 transition-transform duration-700">
+               <div className="flex gap-2 mb-6">
+                 <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                 <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                 <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+               </div>
+               <div className="space-y-4">
+                  <div className="bg-primary/5 p-4 rounded-2xl rounded-tr-none self-end ml-12 text-sm font-medium text-primary">Ingliz tili Present Perfect ni tushuntirib ber</div>
+                  <div className="bg-white border border-border-custom p-5 rounded-2xl rounded-tl-none mr-12 shadow-sm">
+                    <div className="flex items-center gap-2 text-primary font-bold text-[10px] mb-2 uppercase tracking-widest"><Brain size={14} /> AI Expert</div>
+                    <p className="text-sm leading-relaxed text-text-main">Present Perfect — o'tgan harakatni hozirgi natija bilan bog'laydi. <br/><br/> 📌 I <b>have finished</b> my homework.</p>
+                  </div>
+               </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer className="landing-footer">
-        <div className="section-container">
-          <div className="footer-inner">
-            <div className="footer-brand">
-              <div className="nav-logo"><Brain size={18} /></div>
-              <span>LingoAI Expert</span>
-            </div>
-            <p className="footer-copy">© 2026 LingoAI Expert. Barcha huquqlar himoyalangan.</p>
-            <div className="footer-links">
-              <a href="#">Maxfiylik</a>
-              <a href="#">Shartlar</a>
-              <a href="#">Aloqa</a>
-            </div>
+      {/* STATS */}
+      <section className="py-20 px-6" id="stats">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {STATS.map((s, i) => <StatItem key={i} {...s} />)}
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section className="py-32 px-6" id="features">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-20">
+             <div className="text-primary font-bold text-xs uppercase tracking-widest mb-4">Imkoniyatlar</div>
+             <h2 className="text-4xl lg:text-5xl font-black text-text-main mb-6">Barcha fanlar, <span className="text-primary italic">bir joyda</span></h2>
+             <p className="text-text-muted max-w-2xl mx-auto">O'quv dasturingizga mos har qanday savol bering — AI daqiqa ichida javob beradi</p>
           </div>
+
+          <div className="features-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {FEATURES.map((f, i) => (
+              <div key={i} className="feature-card bg-white p-8 rounded-[32px] border border-border-custom hover:border-primary hover:shadow-2xl transition-all duration-500 group">
+                <div className={`w-14 h-14 ${f.bg} ${f.color} rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform`}>{f.icon}</div>
+                <h3 className="text-xl font-bold text-text-main mb-4">{f.title}</h3>
+                <p className="text-sm text-text-muted leading-relaxed mb-6">{f.desc}</p>
+                <div className="flex flex-wrap gap-2">
+                  {f.tags.map(t => <span key={t} className={`text-[10px] font-bold px-3 py-1 rounded-full ${f.bg} ${f.color}`}>{t}</span>)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section className="py-32 px-6 bg-bg-sidebar/50" id="pricing">
+         <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-20">
+               <div className="text-primary font-bold text-xs uppercase tracking-widest mb-4">Narxlar</div>
+               <h2 className="text-4xl lg:text-5xl font-black text-text-main mb-6">Sizga mos <span className="text-primary italic">rejani tanlang</span></h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pricing-grid">
+               {PLANS.map((plan, i) => (
+                 <div key={i} className={`bg-white p-10 rounded-[40px] border transition-all duration-500 flex flex-col ${plan.highlight ? 'border-primary shadow-2xl scale-105 relative z-10' : 'border-border-custom hover:border-primary/30'}`}>
+                    {plan.badge && <div className="absolute top-6 right-6 bg-primary text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">{plan.badge}</div>}
+                    <div className="text-xl font-bold text-text-muted mb-6">{plan.name}</div>
+                    <div className="mb-8">
+                       <span className="text-4xl font-black text-text-main">{plan.price}</span>
+                       <span className="text-text-muted text-sm ml-2">UZS / oy</span>
+                    </div>
+                    <ul className="space-y-4 mb-10 flex-1">
+                       {plan.features.map(f => <li key={f} className="flex items-center gap-3 text-sm text-text-main font-medium"><Check size={16} className="text-primary" /> {f}</li>)}
+                    </ul>
+                    <button className={`w-full py-5 rounded-2xl font-bold transition-all ${plan.highlight ? 'bg-primary text-white shadow-xl shadow-primary/20 hover:scale-105' : 'bg-bg-main text-text-main hover:bg-primary/10'}`} onClick={goToLogin}>
+                       {plan.cta}
+                    </button>
+                 </div>
+               ))}
+            </div>
+         </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="py-12 px-6 border-t border-border-custom bg-white">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+           <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white"><Brain size={18} /></div>
+              <span className="font-bold text-text-main">Cortex AI</span>
+           </div>
+           <p className="text-sm text-text-muted">© 2026 Cortex AI. Barcha huquqlar himoyalangan.</p>
+           <div className="flex gap-6 text-sm font-bold text-text-muted">
+              <a href="#" className="hover:text-primary transition-colors">Maxfiylik</a>
+              <a href="#" className="hover:text-primary transition-colors">Shartlar</a>
+              <a href="#" className="hover:text-primary transition-colors">Aloqa</a>
+           </div>
         </div>
       </footer>
 

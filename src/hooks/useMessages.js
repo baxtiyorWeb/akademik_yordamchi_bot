@@ -1,12 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
-import { fetchGeminiResponse, streamGeminiResponse } from '../api/gemini';
+import { streamGeminiResponse } from '../api/gemini';
+import { streamOpenRouterResponse } from '../api/openrouter';
+
+const USE_OPENROUTER = !!import.meta.env.VITE_OPENROUTER_KEY;
 
 export const useMessages = (session) => {
   const queryClient = useQueryClient();
   const userId = session?.user?.id;
 
-  // Xabarlar tarixini olish
   const messagesQuery = useQuery({
     queryKey: ['messages', userId],
     queryFn: async () => {
@@ -28,68 +30,65 @@ export const useMessages = (session) => {
     enabled: !!userId,
   });
 
-  // Yangi xabar qo'shish (User + AI Streaming)
   const sendMessageMutation = useMutation({
     mutationFn: async ({ userText, currentMessages, attachment, mode = 'TUTOR' }) => {
       if (!userId) return;
 
-      // 1. User xabarini DB ga saqlash
+      // 1. Save User Message
       let dbContent = userText;
       if (attachment) dbContent += `\n\n[Ilova: ${attachment.name}]`;
-      await supabase.from('messages').insert([{ user_id: userId, role: 'user', content: dbContent }]);
-
-      // 2. AI dan oqim shaklida javob olish
-      const tempAiId = `a-${Date.now()}`;
+      const { data: userMsg, error: userErr } = await supabase
+        .from('messages')
+        .insert([{ user_id: userId, role: 'user', content: dbContent }])
+        .select()
+        .single();
       
-      // Lokal cache ni yangilash (AI xabari uchun joy ochish)
+      if (userErr) throw userErr;
+
+      // 2. Prepare AI Stream
+      const tempAiId = `a-temp-${Date.now()}`;
       queryClient.setQueryData(['messages', userId], (old = []) => [
-        ...old,
-        { id: tempAiId, role: 'ai', content: '', isNew: true }
+        ...old.filter(m => !m.id.toString().startsWith('temp-')), // Remove optimistic user message
+        { id: userMsg.id, role: 'user', content: dbContent },    // Add real user message
+        { id: tempAiId, role: 'ai', content: '', isNew: true }   // Add temp AI message
       ]);
 
-      const fullReply = await streamGeminiResponse(userText, currentMessages, attachment, mode, (text) => {
-        // Har bir chunk kelganda lokal cache ni yangilaymiz
+      const streamFn = USE_OPENROUTER ? streamOpenRouterResponse : streamGeminiResponse;
+
+      const fullReply = await streamFn(userText, currentMessages, attachment, mode, (text) => {
         queryClient.setQueryData(['messages', userId], (old = []) => {
           return old.map(m => m.id === tempAiId ? { ...m, content: text } : m);
         });
       });
 
-      // 3. AI xabarini DB ga saqlash
+      // 3. Save AI Message
       await supabase.from('messages').insert([{ user_id: userId, role: 'ai', content: fullReply }]);
 
-      return { userText, replyText: fullReply, attachment };
+      return { userText, replyText: fullReply };
     },
-    onMutate: async ({ userText, attachment }) => {
+    onMutate: async ({ userText }) => {
       await queryClient.cancelQueries({ queryKey: ['messages', userId] });
       const previousMessages = queryClient.getQueryData(['messages', userId]);
 
-      const attachmentUrl = attachment ? URL.createObjectURL(attachment) : null;
-      const attachmentType = attachment ? attachment.type : null;
-
+      // Optimistic user message
       queryClient.setQueryData(['messages', userId], (old = []) => [
         ...old,
-        { 
-          id: `temp-u-${Date.now()}`, 
-          role: 'user', 
-          content: userText, 
-          attachment: attachmentUrl,
-          attachmentType: attachmentType,
-          isNew: false 
-        }
+        { id: `temp-u-${Date.now()}`, role: 'user', content: userText }
       ]);
 
       return { previousMessages };
     },
-    // onSuccess ni olib tashlaymiz, chunki biz lokal cache ni stream davomida yangilab bo'ldik
     onError: (err, newTodo, context) => {
       queryClient.setQueryData(['messages', userId], context.previousMessages);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['messages', userId] });
+      // Delay invalidation to allow streaming to finish smoothly
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['messages', userId] });
+      }, 500);
     },
   });
 
-  // Suhbatni tozalash
   const clearChatMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from('messages').delete().eq('user_id', userId);
@@ -100,15 +99,11 @@ export const useMessages = (session) => {
     },
   });
 
-  const setMessages = (newMessages) => {
-    queryClient.setQueryData(['messages', userId], newMessages);
-  };
-
   return {
     messages: messagesQuery.data || [],
     isLoading: messagesQuery.isLoading,
     isSending: sendMessageMutation.isPending,
-    setMessages,
+    setMessages: (newMsgs) => queryClient.setQueryData(['messages', userId], newMsgs),
     sendMessage: sendMessageMutation.mutate,
     clearChat: clearChatMutation.mutate,
   };
