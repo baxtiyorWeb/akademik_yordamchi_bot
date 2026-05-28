@@ -45,7 +45,7 @@ const AuthPage = () => {
         <div className="p-10 lg:p-20 flex flex-col justify-center">
           <div className="flex items-center gap-4 mb-12 cursor-pointer group" onClick={() => navigate('/')}>
             <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white shadow-xl group-hover:rotate-6 transition-transform"><Brain size={24} /></div>
-            <span className="text-2xl font-black text-text-main tracking-tight">Cortex AI</span>
+            <span className="text-2xl font-black text-text-main tracking-tight">Typer AI</span>
           </div>
 
           <div className="mb-10">

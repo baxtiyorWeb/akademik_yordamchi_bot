@@ -1,17 +1,65 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { LayoutGrid, ChevronRight, History, Paperclip, Mic, ArrowRight, X } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Plus, Mic, ArrowUp, Send, X, Image as ImageIcon, Wand2, Paperclip, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
+import gsap from 'gsap';
 
-const ChatInput = React.memo(({ onSend, isTyping }) => {
+const GradientIcon = ({ icon: Icon, size = 20, className = "" }) => (
+  <div className={`relative flex items-center justify-center ${className}`} style={{ width: size, height: size }}>
+    <Icon 
+      size={size} 
+      stroke="url(#premium-gradient)" 
+    />
+  </div>
+);
+
+const ChatInput = React.memo(({ onSend, isTyping, isNano }) => {
   const [localInput, setLocalInput] = useState('');
-  const [isListening, setIsListening] = useState(false);
   const [attachment, setAttachment] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
+  const containerRef = useRef(null);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("Fayl hajmi juda katta (maks 10MB)");
+        return;
+      }
+      setAttachment(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePaste = useCallback((e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          setAttachment(file);
+          const reader = new FileReader();
+          reader.onloadend = () => setPreview(reader.result);
+          reader.readAsDataURL(file);
+        }
+      }
+    }
+  }, []);
 
   const handleSend = () => {
     if ((!localInput.trim() && !attachment) || isTyping) return;
     onSend(localInput, attachment);
     setLocalInput('');
     setAttachment(null);
+    setPreview(null);
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
   };
 
   const handleKeyDown = (e) => {
@@ -21,64 +69,116 @@ const ChatInput = React.memo(({ onSend, isTyping }) => {
     }
   };
 
-  const handleVoice = useCallback(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return alert('Ovozli qidiruv qo\'llab-quvvatlamaydi.');
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'uz-UZ';
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onresult = (event) => setLocalInput(prev => prev + ' ' + event.results[0][0].transcript);
-    if (isListening) recognition.stop(); else recognition.start();
-  }, [isListening]);
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 160) + 'px';
+    }
+  }, [localInput]);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.addEventListener('paste', handlePaste);
+      return () => textarea.removeEventListener('paste', handlePaste);
+    }
+  }, [handlePaste]);
+
+  if (isNano) {
+    return (
+      <div className="flex flex-col gap-2 w-full" ref={containerRef}>
+        {preview && (
+          <div className="flex px-4">
+            <div className="relative">
+              <img src={preview} className="h-20 w-20 object-cover rounded-xl border border-slate-100 shadow-sm" alt="Preview" />
+              <button 
+                onClick={() => { setAttachment(null); setPreview(null); }}
+                className="absolute -top-1.5 -right-1.5 bg-slate-900 text-white rounded-full p-1 shadow-md hover:scale-110 transition-all"
+              >
+                <X size={10} />
+              </button>
+            </div>
+          </div>
+        )}
+        
+        <div className="flex items-start gap-3">
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            accept="image/*,application/pdf" 
+            className="hidden" 
+          />
+          
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            className="mt-2.5 p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-all"
+          >
+            <GradientIcon icon={Paperclip} size={20} />
+          </button>
+          
+          <div className="flex-1">
+            <textarea
+              ref={textareaRef}
+              placeholder='Savolingizni yozing...'
+              rows={1}
+              value={localInput}
+              onChange={(e) => setLocalInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="w-full bg-transparent border-none outline-none resize-none text-[17px] font-normal text-slate-800 placeholder:text-slate-300 py-2.5 min-h-[44px] max-h-40 custom-scrollbar leading-relaxed"
+              spellCheck={false}
+            />
+          </div>
+
+          <div className="flex items-center gap-2 mt-1.5">
+            <button 
+              onClick={() => setIsVoiceActive(!isVoiceActive)}
+              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${isVoiceActive ? 'bg-rose-500 text-white' : 'bg-slate-50 text-slate-400 hover:text-slate-600'}`}
+            >
+              {isVoiceActive ? <Mic size={18} /> : <GradientIcon icon={Mic} size={18} />}
+            </button>
+            
+            <button 
+              onClick={handleSend}
+              disabled={(!localInput.trim() && !attachment) || isTyping}
+              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all
+                ${(!localInput.trim() && !attachment) || isTyping 
+                  ? 'bg-slate-100 text-slate-300' 
+                  : 'bg-gradient-to-br from-violet-600 to-blue-600 text-white shadow-md hover:opacity-90 active:scale-95'}`}
+            >
+              {isTyping ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                <ArrowUp size={20} strokeWidth={2.5} />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-4">
-      {attachment && (
-        <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-2xl animate-in slide-in-from-bottom-2 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center overflow-hidden border border-orange-100">
-              {attachment.type.startsWith('image/') ? <img src={URL.createObjectURL(attachment)} className="w-full h-full object-cover" /> : <Paperclip size={18} className="text-orange-500" />}
-            </div>
-            <div className="text-[11px] font-bold text-gray-500 truncate max-w-[150px]">{attachment.name}</div>
-          </div>
-          <button onClick={() => setAttachment(null)} className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"><X size={16} /></button>
+    <div className="flex flex-col gap-2">
+      {preview && (
+        <div className="relative w-14 h-14">
+          <img src={preview} className="w-full h-full object-cover rounded-lg" />
+          <button onClick={() => { setAttachment(null); setPreview(null); }} className="absolute -top-1 -right-1 bg-slate-900 text-white rounded-full p-0.5"><X size={8} /></button>
         </div>
       )}
-
-      <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-[32px] p-5 shadow-xl shadow-black/[0.02] relative group transition-all focus-within:border-gray-300">
-        <div className="absolute top-4 right-5 text-gray-300 pointer-events-none"><LayoutGrid size={18} /></div>
-
+      <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-1.5">
+        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*,application/pdf" className="hidden" />
+        <button onClick={() => fileInputRef.current?.click()} className="text-slate-400"><Paperclip size={18} /></button>
         <textarea
-          placeholder="Cortex dan istalgan narsani so'rang..."
+          ref={textareaRef}
+          placeholder="Message..."
           rows={1}
           value={localInput}
-          onChange={(e) => {
-            setLocalInput(e.target.value);
-            e.target.style.height = 'auto';
-            e.target.style.height = e.target.scrollHeight + 'px';
-          }}
+          onChange={(e) => setLocalInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="w-full bg-transparent border-none outline-none resize-none text-[15px] font-semibold text-gray-800 placeholder:text-gray-300 py-1 max-h-40 custom-scrollbar"
+          className="flex-1 bg-transparent border-none outline-none resize-none text-[15px] py-1.5"
         />
-
-        <div className="flex justify-between items-center mt-4">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-400 rounded-xl text-[11px] font-black hover:bg-gray-200 transition-colors uppercase tracking-wider">
-            Cortex 4.0 <ChevronRight size={14} />
-          </button>
-          <div className="flex items-center gap-1">
-            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all"><History size={18} /></button>
-            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all" onClick={() => fileInputRef.current.click()}><Paperclip size={18} /></button>
-            <input type="file" ref={fileInputRef} hidden onChange={(e) => setAttachment(e.target.files[0])} accept="image/*,audio/*,video/*,.pdf" />
-            <button className={`p-2 rounded-xl transition-all ${isListening ? 'bg-red-50 text-red-500' : 'text-gray-400 hover:bg-gray-100'}`} onClick={handleVoice}>
-              <Mic size={18} />
-            </button>
-            <button onClick={handleSend} disabled={(!localInput.trim() && !attachment) || isTyping}
-              className={`ml-2 w-9 h-9 text-white rounded-xl flex items-center justify-center shadow-lg transition-all active:scale-95 ${isTyping ? 'bg-gray-300 shadow-none' : 'bg-orange-500 shadow-orange-500/20'}`}>
-              {isTyping ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <ArrowRight size={20} />}
-            </button>
-          </div>
-        </div>
+        <button onClick={handleSend} className="p-1.5 bg-slate-900 text-white rounded-lg"><ArrowUp size={16} /></button>
       </div>
     </div>
   );

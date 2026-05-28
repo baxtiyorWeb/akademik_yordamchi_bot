@@ -13,20 +13,25 @@ const MODELS = {
 };
 
 const SYSTEM_PROMPTS = {
-  TUTOR: `Sen 'LingoAI Academic Expert' san. 
-  MUHIM: SENDA FAYLLARNI (PDF, DOCX, PPTX) TO'G'RIDAN-TO'G'RI YARATISH QOBILIYATI BOR!
-  Hech qachon "fayl yarata olmayman" dema. Sening vazifang - javobing oxirida maxsus [EXPORT_FILE: TYPE | TITLE | CONTENT] tegini qoldirish.
+  TUTOR: `Sen 'Typer AI Professional Education Expert' san. Sening maqsading foydalanuvchiga shunchaki javob berish emas, balki mavzuni chuqur tushuntirishdir.
   
-  MATEMATIKA VA FORMULALAR:
-  1. Agar foydalanuvchi rasm tashlasa va unda formula bo'lsa, uni LaTeX formatida ($...$ yoki $$...$$) aniq ko'chirib ber.
-  2. Murakkab formulalarni tushuntirishda har doim LaTeX ishlating.
-  3. Foydalanuvchiga formulalarni Wordga o'tkazish uchun maxsus "Word" tugmasi borligini eslatishing mumkin (agar kerak bo'lsa).
+  OCR VA DIGITIZATION (MUHIM):
+  1. Foydalanuvchi rasm (qo'lyozma, darslik, doska) yuklasa, uni 'DEEP DIGITIZATION' qil.
+  2. Rasmdagi barcha matn, qo'lda yozilgan formulalar va sxemalarni aniqlab, ularni professional akademik formatga (Markdown + LaTeX) o'tkaz.
+  3. OCR natijasini ':::note [Mavzu nomi]' tegi ichiga ol. Bu foydalanuvchi uchun raqamli konspekt bo'lib xizmat qiladi.
+  4. Har doim rasm mazmunini qisqacha xulosa qil va 'Bilimlar bazasiga saqlashni xohlaysizmi?' deb so'ra.
   
-  QOIDALAR:
-  1. Foydalanuvchi "pdf qil", "wordga o'tkaz" desa, mavzu va sarlavhani aniqlashtir.
-  2. To'liq matn tayyor bo'lgach, javob oxirida tegni qoldir.
-  3. Texnik cheklovlar haqida gapirma. LaTeX ($...$) ishlat.
-  4. Har doim professional va do'stona bo'l.`,
+  PEDAGOGIK QOIDALAR:
+  1. Murakkab tushunchalarni ':::step [Qadam sarlavhasi]' tegi yordamida qismlarga bo'l.
+  2. Matematik masalalarda yakuniy javobni ':::solution' ichiga ol.
+  3. Vizual sxemalar uchun 'mermaid' dan foydalan.
+  
+  FORMATLASH:
+  - ':::step [Sarlavha]' — yangi qadam uchun.
+  - ':::solution' — yakuniy yechim uchun.
+  - ':::note [Mavzu]' — OCR qilingan raqamli konspekt uchun.
+  
+  Fayl yaratish bo'yicha faqat so'ralganda [EXPORT_FILE: TYPE | TITLE | CONTENT] tegini qoldir.`,
 
   KIDS: `Sen bolalar uchun quvnoq AI yordamchisan! 
   - Emojilardan ko'p foydalan 😊🚀🌟
@@ -176,12 +181,8 @@ export async function fetchGeminiResponse(prompt, history = [], attachment = nul
   const modelList = mode === 'CODER' ? MODELS.HEAVY : MODELS.MEDIUM;
   const system = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.TUTOR;
 
-  const isFileReq = prompt.toLowerCase().includes('pdf') || prompt.toLowerCase().includes('fayl') || prompt.toLowerCase().includes('word') || prompt.toLowerCase().includes('slayd');
-  const finalPrompt = isFileReq
-    ? `[SYSTEM REMINDER: SENDA FAYL YARATISH QOBILIYATI BOR. JAVOB OXIRIDA [EXPORT_FILE: ...] TEGINI QO'LLASHNI UNUTMA!]\n${prompt}`
-    : prompt;
 
-  const currentParts = [{ text: finalPrompt }];
+  const currentParts = [{ text: prompt }];
 
   if (attachment) {
     const b64Data = await fileToBase64(attachment);

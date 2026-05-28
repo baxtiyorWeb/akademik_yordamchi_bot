@@ -14,8 +14,8 @@ const MODELS = {
   GENERAL: "google/gemini-2.0-flash-lite-preview-02-05:free",
   THINKING: "deepseek/deepseek-r1:free",
   CODING: "qwen/qwen-2.5-coder-32b-instruct:free",
-  MATH: "google/gemini-flash-1.5:free",
-  DOCS: "mistralai/mistral-7b-instruct:free",
+  MATH: "nvidia/nemotron-3-super-120b-a12b:free",
+  NVIDIA: "nvidia/nemotron-3-super-120b-a12b:free",
   FREE_ROUTER: "openrouter/free",
 };
 

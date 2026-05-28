@@ -3,7 +3,7 @@ import { supabase } from '../supabase';
 import { streamGeminiResponse } from '../api/gemini';
 import { streamOpenRouterResponse } from '../api/openrouter';
 
-const USE_OPENROUTER = !!import.meta.env.VITE_OPENROUTER_KEY;
+const USE_OPENROUTER = false; // Disabled as per user request to use gemini.js instead
 
 export const useMessages = (session) => {
   const queryClient = useQueryClient();
@@ -36,7 +36,10 @@ export const useMessages = (session) => {
 
       // 1. Save User Message
       let dbContent = userText;
-      if (attachment) dbContent += `\n\n[Ilova: ${attachment.name}]`;
+      if (attachment) {
+        const fileName = attachment.name || `image_${Date.now()}.png`;
+        dbContent += `\n\n[Ilova: ${fileName}]`;
+      }
       const { data: userMsg, error: userErr } = await supabase
         .from('messages')
         .insert([{ user_id: userId, role: 'user', content: dbContent }])

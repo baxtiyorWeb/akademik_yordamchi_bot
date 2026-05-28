@@ -96,12 +96,14 @@ const ChatMessage = React.memo(({ msg, previousMsg, onSave, onRegenerate, onAuto
         const charsToAdd = diff > 50 ? 5 : diff > 15 ? 2 : 1;
         const timeout = setTimeout(() => {
           setDisplayedText(prev => cleanContent.slice(0, prev.length + charsToAdd));
-          const scrollContainer = document.querySelector('.chat-messages') || document.querySelector('.kids-messages');
+          const scrollContainer = document.querySelector('.chat-messages') || document.querySelector('.flex-1.overflow-y-auto');
           if (scrollContainer) scrollContainer.scrollTop = scrollContainer.scrollHeight;
         }, 15);
         return () => clearTimeout(timeout);
       }
-    } else setDisplayedText(cleanContent);
+    } else {
+      setDisplayedText(cleanContent);
+    }
   }, [cleanContent, displayedText, isAI, msg.isNew]);
 
   const mdComponents = useMemo(() => ({
@@ -206,8 +208,18 @@ const ChatMessage = React.memo(({ msg, previousMsg, onSave, onRegenerate, onAuto
   };
 
   return (
-    <div className={`flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-      <div ref={messageRef} className={`relative max-w-[85%] px-6 py-4 rounded-[28px] shadow-sm ${msg.role === 'user' ? 'bg-primary text-white rounded-tr-none' : 'bg-white dark:bg-[#1a1635] text-text-main border border-border-custom rounded-tl-none shadow-indigo-500/5'}`}>
+    <div className={`flex w-full animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+      <div ref={messageRef} className={`relative ${isKids ? 'max-w-[95%]' : 'max-w-[85%]'} px-6 py-4 rounded-[28px] shadow-sm ${
+        msg.role === 'user' 
+          ? (isKids ? 'bg-orange-400 text-white rounded-tr-none border-4 border-orange-200' : 'bg-primary text-white rounded-tr-none') 
+          : (isKids ? 'bg-white text-slate-700 border-4 border-sky-100 rounded-tl-none shadow-sky-100/50' : 'bg-white dark:bg-[#1a1635] text-text-main border border-border-custom rounded-tl-none shadow-indigo-500/5')
+      }`}>
+        
+        {isKids && msg.role === 'ai' && (
+          <div className="absolute -top-4 -left-4 w-10 h-10 bg-white rounded-full border-4 border-sky-100 flex items-center justify-center text-xl shadow-lg animate-bounce">
+            🧸
+          </div>
+        )}
         
         {exportData && (
           <div className="mb-4 p-4 bg-primary/10 rounded-2xl border border-primary/20 flex items-center justify-between gap-4 animate-pulse-slow">
@@ -238,9 +250,14 @@ const ChatMessage = React.memo(({ msg, previousMsg, onSave, onRegenerate, onAuto
               <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:0.4s]"></div>
             </div>
           ) : (
-            <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex, rehypeRaw]} components={mdComponents}>
-              {isAI ? displayedText : content}
-            </ReactMarkdown>
+            <div className="relative">
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex, rehypeRaw]} components={mdComponents}>
+                {isAI ? displayedText : content}
+              </ReactMarkdown>
+              {isAI && msg.isNew && displayedText.length < cleanContent.length && (
+                <span className="inline-block w-2 h-5 bg-primary/40 ml-1 animate-pulse rounded-full align-middle"></span>
+              )}
+            </div>
           )}
         </div>
 
@@ -250,19 +267,27 @@ const ChatMessage = React.memo(({ msg, previousMsg, onSave, onRegenerate, onAuto
               {copied ? <Check size={12} /> : <Copy size={12} />} {copied ? 'Nusxalandi' : 'Nusxa'}
             </button>
             <button onClick={() => onSave?.(cleanContent)} className="flex items-center gap-1.5 px-3 py-1 bg-bg-main border border-border-custom rounded-full text-[10px] font-bold text-amber-600 hover:bg-amber-50 transition-all"><Star size={12} /> Saqlash</button>
-            <button onClick={() => { const u = new SpeechSynthesisUtterance(cleanContent.replace(/[#*`]/g, '')); u.lang='uz-UZ'; speechSynthesis.speak(u); }} className="flex items-center gap-1.5 px-3 py-1 bg-bg-main border border-border-custom rounded-full text-[10px] font-bold text-text-muted hover:text-primary transition-all"><Volume2 size={12} /> Ovoz</button>
+            <button onClick={() => { const u = new SpeechSynthesisUtterance(cleanContent.replace(/[#*`]/g, '')); u.lang='uz-UZ'; speechSynthesis.speak(u); }} className={`flex items-center gap-1.5 px-3 py-1 border rounded-full text-[10px] font-bold transition-all ${isKids ? 'bg-sky-50 border-sky-200 text-sky-600 hover:bg-sky-100 scale-110' : 'bg-bg-main border-border-custom text-text-muted hover:text-primary'}`}><Volume2 size={12} /> {isKids ? 'Eshitish' : 'Ovoz'}</button>
             
-            {isMathRequested && hasMath && (
+            {isKids && (
+              <button className="flex items-center gap-1.5 px-3 py-1 bg-pink-50 border border-pink-200 rounded-full text-[10px] font-bold text-pink-600 hover:bg-pink-100 scale-110 transition-all">
+                <Star size={12} fill="currentColor" /> Menga yoqdi!
+              </button>
+            )}
+
+            {!isKids && isMathRequested && hasMath && (
               <button onClick={copyFormulaToWord} className="flex items-center gap-1.5 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-[10px] font-bold text-primary transition-all"><Sigma size={12} /> Word Formula</button>
             )}
 
-            <div className="flex items-center gap-2 bg-primary/5 px-3 py-1 rounded-full border border-primary/10">
-               <span className="text-[9px] font-black text-primary uppercase tracking-widest">Export:</span>
-               <button onClick={()=>handleManualExport('PDF')} className="text-red-500 hover:scale-110 transition-transform"><FileText size={14} /></button>
-               <button onClick={()=>handleManualExport('DOCX')} className="text-blue-500 hover:scale-110 transition-transform"><FileJson size={14} /></button>
-               <button onClick={()=>handleManualExport('PPTX')} className="text-amber-500 hover:scale-110 transition-transform"><Presentation size={14} /></button>
-               <button onClick={()=>handleManualExport('XLSX')} className="text-emerald-500 hover:scale-110 transition-transform"><Table size={14} /></button>
-            </div>
+            {!isKids && (
+              <div className="flex items-center gap-2 bg-primary/5 px-3 py-1 rounded-full border border-primary/10">
+                 <span className="text-[9px] font-black text-primary uppercase tracking-widest">Export:</span>
+                 <button onClick={()=>handleManualExport('PDF')} className="text-red-500 hover:scale-110 transition-transform"><FileText size={14} /></button>
+                 <button onClick={()=>handleManualExport('DOCX')} className="text-blue-500 hover:scale-110 transition-transform"><FileJson size={14} /></button>
+                 <button onClick={()=>handleManualExport('PPTX')} className="text-amber-500 hover:scale-110 transition-transform"><Presentation size={14} /></button>
+                 <button onClick={()=>handleManualExport('XLSX')} className="text-emerald-500 hover:scale-110 transition-transform"><Table size={14} /></button>
+              </div>
+            )}
           </div>
         )}
       </div>
