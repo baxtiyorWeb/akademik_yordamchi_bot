@@ -12,19 +12,12 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    minify: 'terser',
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
         }
       }
-    }
-  },
-  server: {
-    middlewareMode: false,
-    headers: {
-      'Content-Type': 'application/javascript'
     }
   }
 })
