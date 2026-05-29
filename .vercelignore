@@ -26,5 +26,3 @@ coverage
 *.swo
 *~
 
-# Source files (we only need dist)
-src
