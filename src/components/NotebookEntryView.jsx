@@ -222,8 +222,9 @@ export default function NotebookEntryView({ entry, session, onBack, startWithQui
       >
         <div className="p-5 md:p-12 lg:p-16 max-w-4xl mx-auto">
           <button 
-            onClick={onBack} 
-            className="flex items-center gap-2 mb-8 text-slate-500 hover:text-slate-900 font-medium"
+            onClick={() => { if (typeof onBack === 'function') { onBack(); } else { window.history.back(); } }}
+            className="flex items-center gap-2 mb-8 text-slate-600 hover:text-slate-900 font-medium"
+            aria-label="go back"
           >
             <ChevronLeft size={22} /> Ortga
           </button>
