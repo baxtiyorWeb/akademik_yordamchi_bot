@@ -48,20 +48,19 @@ function MainLayout({ children, session }) {
   return (
     <div className="flex h-screen bg-[#fcfdfe] overflow-hidden font-sans text-slate-900">
       <IconGradient />
-      
-      {/* --- SIDEBAR (DESKTOP ONLY) --- */}
+
       <aside className="hidden md:flex w-64 bg-white border-r border-slate-100 flex-col z-30 shadow-sm">
         <div className="p-6 border-b border-slate-50 flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-100">T</div>
+          <div className="w-8 h-8 bg-linear-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-100">T</div>
           <span className="text-[16px] font-semibold tracking-tight text-slate-900">Typer AI</span>
         </div>
 
         <div className="p-4">
           <div className="relative group">
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" />
-            <input 
-              type="text" 
-              placeholder={t('search_placeholder')} 
+            <input
+              type="text"
+              placeholder={t('search_placeholder')}
               className="w-full pl-10 pr-3 py-2 bg-slate-50 border-none rounded-xl text-[13px] outline-none placeholder:text-slate-400 focus:bg-slate-100 transition-all"
             />
           </div>
@@ -74,15 +73,14 @@ function MainLayout({ children, session }) {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[14px] font-medium transition-all ${
-                  isActive
-                    ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' 
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[14px] font-medium transition-all ${isActive
+                    ? 'bg-slate-900 text-white shadow-lg shadow-slate-200'
                     : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <span style={{ stroke: isActive ? 'white' : 'url(#blue-purple-gradient)' }}>
-                  {React.cloneElement(item.icon, { 
-                    stroke: isActive ? 'currentColor' : 'url(#blue-purple-gradient)' 
+                  {React.cloneElement(item.icon, {
+                    stroke: isActive ? 'currentColor' : 'url(#blue-purple-gradient)'
                   })}
                 </span>
                 {t(item.labelKey)}
@@ -110,9 +108,8 @@ function MainLayout({ children, session }) {
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
-              className={`flex flex-col items-center justify-center flex-1 py-1 transition-all ${
-                isActive ? 'text-indigo-600 scale-105 font-bold' : 'text-slate-400 font-medium'
-              }`}
+              className={`flex flex-col items-center justify-center flex-1 py-1 transition-all ${isActive ? 'text-indigo-600 scale-105 font-bold' : 'text-slate-400 font-medium'
+                }`}
             >
               <span className="transition-all duration-300">
                 {React.cloneElement(item.icon, {
@@ -145,10 +142,10 @@ function MainLayout({ children, session }) {
             <button className="hidden sm:flex items-center gap-2 px-5 py-2 bg-slate-900 text-white rounded-xl text-[13px] font-medium hover:opacity-90 transition-all shadow-xl shadow-slate-100">
               <Share2 size={14} /> Ulashish
             </button>
-            
+
             {/* Header Profile Dropdown */}
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
                 className="flex items-center gap-1.5 p-1 hover:bg-slate-50 rounded-xl transition-all border border-slate-100"
               >
@@ -157,7 +154,7 @@ function MainLayout({ children, session }) {
                 </div>
                 <ChevronDown size={13} className="text-slate-400 mr-0.5" />
               </button>
-              
+
               {showProfileMenu && (
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-100 rounded-2xl shadow-xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="px-4 py-2 border-b border-slate-50">
@@ -172,20 +169,20 @@ function MainLayout({ children, session }) {
                       )}
                     </p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => { navigate('/profile'); setShowProfileMenu(false); }}
                     className="w-full text-left px-4 py-2 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors flex items-center gap-2"
                   >
                     <LayoutGrid size={15} stroke="url(#blue-purple-gradient)" /> {t('profile')}
                   </button>
-                  <button 
+                  <button
                     onClick={() => { navigate('/profile'); setShowProfileMenu(false); }}
                     className="w-full text-left px-4 py-2 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors flex items-center gap-2"
                   >
                     <Settings size={15} stroke="url(#blue-purple-gradient)" /> {t('settings')}
                   </button>
                   <hr className="border-slate-50 my-1" />
-                  <button 
+                  <button
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-2 text-[13px] font-medium text-rose-500 hover:bg-rose-50 transition-colors flex items-center gap-2"
                   >
