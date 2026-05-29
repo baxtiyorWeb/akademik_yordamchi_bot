@@ -152,7 +152,7 @@ const SmartNoteLM = React.memo(({ title, content, onSave }) => {
           {saved ? 'Saqlandi ✓' : 'Saqlash'}
         </button>
       </div>
-      <div className="prose prose-sm max-w-none text-slate-600 border-t border-indigo-100 pt-3 text-[13px]">
+      <div className="prose prose-sm max-w-none text-slate-600 border-t border-indigo-100 pt-3 text-[16px]">
         <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{content}</ReactMarkdown>
       </div>
     </div>
@@ -797,7 +797,7 @@ const TutorChat = ({ session }) => {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto custom-scrollbar">
-          <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-6">
+          <div className="max-w-dvw mx-auto px-4 md:px-6 py-6 space-y-6">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center">
                 <div className="relative">
