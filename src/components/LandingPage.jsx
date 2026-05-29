@@ -76,10 +76,10 @@ const LandingPage = () => {
     <div className="min-h-screen bg-white font-sans text-neutral-900 selection:bg-neutral-900 selection:text-white">
       
       {/* --- MINIMAL NAVBAR --- */}
-      <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 backdrop-blur-md border-b border-neutral-100 py-3' : 'bg-transparent py-6'}`}>
+      <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled ? 'glass-panel py-3' : 'bg-transparent py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white font-bold text-sm">T</div>
+          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} data-tooltip="Bosh sahifaga qaytish">
+            <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white font-bold text-sm group-hover:bg-indigo-600 transition-colors">T</div>
             <span className="text-lg font-bold tracking-tight">Typer AI</span>
           </div>
 
@@ -90,7 +90,7 @@ const LandingPage = () => {
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
             <button className="hidden sm:block text-[13px] font-semibold text-neutral-500 hover:text-black transition-colors" onClick={goToLogin}>Log in</button>
-            <button className="bg-black text-white text-[13px] font-semibold px-5 py-2 rounded-lg hover:opacity-90 transition-opacity" onClick={goToLogin}>
+            <button className="btn-glow bg-black text-white text-[13px] font-semibold px-5 py-2 rounded-lg hover:opacity-90 transition-opacity" onClick={goToLogin} data-tooltip="Tizimga kirish yoki ro'yxatdan o'tish">
               Get Started
             </button>
             <button className="lg:hidden p-2 text-neutral-900" onClick={() => setMenuOpen(!menuOpen)}>
@@ -118,10 +118,10 @@ const LandingPage = () => {
             Typer AI centralizes your learning, research, and problem-solving into a single, high-performance environment.
           </p>
           <div className="hero-cta flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button className="bg-black text-white px-8 py-3.5 rounded-xl font-semibold text-[15px] shadow-xl shadow-black/10 hover:opacity-90 transition-all flex items-center gap-2" onClick={goToLogin}>
+            <button className="btn-glow bg-black text-white px-8 py-3.5 rounded-xl font-semibold text-[15px] shadow-xl shadow-black/10 hover:scale-105 transition-all flex items-center gap-2" onClick={goToLogin}>
               Start for free <ArrowRight size={18} />
             </button>
-            <button className="text-neutral-500 hover:text-black px-8 py-3.5 rounded-xl font-semibold text-[15px] transition-all flex items-center gap-2" onClick={() => navigate('/kids')}>
+            <button className="text-neutral-500 hover:text-indigo-600 hover:bg-indigo-50 px-8 py-3.5 rounded-xl font-semibold text-[15px] transition-all flex items-center gap-2" onClick={() => navigate('/kids')} data-tooltip="Bolalar uchun maxsus rejim">
               Kids Mode <SmileIcon />
             </button>
           </div>
@@ -186,8 +186,8 @@ const LandingPage = () => {
 
           <div className="features-grid grid grid-cols-1 md:grid-cols-3 gap-16">
             {FEATURES.map((f, i) => (
-              <div key={i} className="feature-item space-y-6">
-                <div className="w-10 h-10 bg-neutral-50 border border-neutral-100 rounded-lg flex items-center justify-center text-neutral-900">{f.icon}</div>
+              <div key={i} className="feature-item space-y-6 content-card p-8 border-none bg-white/60">
+                <div className="w-10 h-10 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">{f.icon}</div>
                 <h3 className="text-lg font-bold text-neutral-900">{f.title}</h3>
                 <p className="text-[14px] text-neutral-500 leading-relaxed font-medium">{f.desc}</p>
                 <div className="pt-2">
@@ -201,11 +201,11 @@ const LandingPage = () => {
 
       {/* --- CTA SECTION (LINEAR STYLE) --- */}
       <section className="py-40 px-6 border-t border-neutral-50">
-         <div className="max-w-3xl mx-auto text-center space-y-12 bg-neutral-900 p-16 rounded-[40px] text-white shadow-2xl relative overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.1),_transparent)]"></div>
+         <div className="max-w-3xl mx-auto text-center space-y-12 bg-neutral-900 p-16 rounded-[40px] text-white shadow-2xl relative overflow-hidden glass-panel !bg-slate-900/90 !border-slate-800">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.2),_transparent)]"></div>
             <h2 className="text-4xl font-bold tracking-tight relative z-10">Start your smart learning <br/> journey today.</h2>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center relative z-10">
-               <button className="bg-white text-black px-10 py-3.5 rounded-xl font-bold shadow-xl hover:opacity-90 transition-all" onClick={goToLogin}>Get Started</button>
+               <button className="btn-glow bg-white text-black px-10 py-3.5 rounded-xl font-bold shadow-xl hover:scale-105 transition-all" onClick={goToLogin}>Get Started</button>
                <button className="text-neutral-400 hover:text-white transition-colors font-semibold" onClick={() => navigate('/login')}>Sign in</button>
             </div>
             <div className="text-[10px] text-neutral-500 font-medium relative z-10 tracking-[0.1em] uppercase">No credit card required. Free tier available.</div>

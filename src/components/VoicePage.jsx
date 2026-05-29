@@ -188,8 +188,8 @@ function VoicePage() {
         {mode === 'idle' && (
           <div className="flex flex-col items-center text-center max-w-md z-10 animate-in fade-in zoom-in-95">
             <div className="w-20 h-20 bg-white border border-slate-50 rounded-[32px] shadow-xl flex items-center justify-center mb-8"><Headphones size={36} stroke="url(#v-blue-purple)" /></div>
-            <h1 className="text-2xl font-bold text-slate-900 mb-2 uppercase tracking-tight">Lingo Voice</h1>
-            <p className="text-[12px] text-slate-400 font-bold mb-10 uppercase tracking-widest">Smart Noise Cancellation Mode</p>
+            <h1 className="hidden md:block text-2xl font-bold text-slate-900 mb-2 uppercase tracking-tight">Lingo Voice</h1>
+            <p className="hidden md:block text-[12px] text-slate-400 font-bold mb-10 uppercase tracking-widest">Smart Noise Cancellation Mode</p>
             <button onClick={startSession} className="px-12 py-4 bg-slate-900 text-white rounded-2xl text-[12px] font-bold shadow-xl uppercase tracking-widest">MULOQOTNI BOSHLASH</button>
           </div>
         )}

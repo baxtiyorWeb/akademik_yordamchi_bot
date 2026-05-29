@@ -101,11 +101,11 @@ function ProfilePage({ session }) {
   );
 
   return (
-    <div className="flex-1 overflow-y-auto px-10 py-16 bg-white nano-bg custom-scrollbar">
-      <div className="max-w-6xl mx-auto space-y-16 animate-in fade-in duration-700">
+    <div className="flex-1 overflow-y-auto px-4 md:px-10 py-6 md:py-16 bg-white nano-bg custom-scrollbar">
+      <div className="max-w-6xl mx-auto space-y-8 md:space-y-16 animate-in fade-in duration-700">
         
         {/* --- USER PROFILE HEADER --- */}
-        <section className="flex flex-col md:flex-row items-start md:items-center gap-10">
+        <section className="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10">
           <div className="relative group">
             <div className="w-24 h-24 rounded-[32px] bg-white shadow-xl shadow-blue-500/5 flex items-center justify-center text-slate-400 border border-slate-100 overflow-hidden relative">
                <div className="absolute inset-0 bg-gradient-to-tr from-blue-50 to-indigo-50 opacity-50"></div>
@@ -116,29 +116,49 @@ function ProfilePage({ session }) {
             </button>
           </div>
 
-          <div className="flex-1 space-y-5">
-            <div className="bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-white/50 w-fit">
-               <div className="flex items-center gap-4 mb-1">
-                 <h1 className="text-2xl font-normal text-slate-900 tracking-tight">{session?.user?.email?.split('@')[0]}</h1>
-                 <div className="px-2 py-0.5 bg-blue-50 text-blue-500 text-[9px] font-medium uppercase tracking-widest rounded-full border border-blue-100">Free Account</div>
+          <div className="flex-1 space-y-5 w-full">
+            <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-slate-100 w-full md:w-fit shadow-sm">
+               <div className="flex flex-wrap items-center gap-2 mb-2">
+                 <h1 className="text-xl md:text-2xl font-normal text-slate-900 tracking-tight break-all">{session?.user?.email?.split('@')[0]}</h1>
+                 {profile?.plan === 'Pro' ? (
+                   <div className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[9px] font-semibold uppercase tracking-widest rounded-full border border-indigo-100 whitespace-nowrap flex items-center gap-1 shadow-sm">
+                     <Zap size={10} className="fill-indigo-600 animate-pulse" /> Pro Account
+                   </div>
+                 ) : profile?.plan === 'Research' ? (
+                   <div className="px-2 py-0.5 bg-purple-50 text-purple-600 text-[9px] font-semibold uppercase tracking-widest rounded-full border border-purple-100 whitespace-nowrap flex items-center gap-1 shadow-sm">
+                     <Brain size={10} className="fill-purple-600 animate-pulse" /> Research Account
+                   </div>
+                 ) : (
+                   <div className="px-2 py-0.5 bg-slate-50 text-slate-500 text-[9px] font-medium uppercase tracking-widest rounded-full border border-slate-200 whitespace-nowrap">
+                     Free Account
+                   </div>
+                 )}
                </div>
-               <div className="flex flex-wrap items-center gap-5 text-[13px] font-normal text-slate-400">
-                  <div className="flex items-center gap-2"><Mail size={14} strokeWidth={1.5} className="text-slate-300" /> {session?.user?.email}</div>
-                  <div className="flex items-center gap-2"><Activity size={14} strokeWidth={1.5} className="text-slate-300" /> Level 12</div>
+               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 text-[13px] font-normal text-slate-400">
+                  <div className="flex items-center gap-2 min-w-0"><Mail size={14} strokeWidth={1.5} className="text-slate-300 flex-shrink-0" /> <span className="break-all">{session?.user?.email}</span></div>
+                  <div className="flex items-center gap-2"><Activity size={14} strokeWidth={1.5} className="text-slate-300 flex-shrink-0" /> Level 12</div>
+                  {profile?.plan && profile?.plan !== 'Free' && profile?.plan_expires_at && (
+                    <div className="flex items-center gap-1.5 text-indigo-500 bg-indigo-50/50 px-2 py-0.5 rounded-lg border border-indigo-100/50 text-[11px] font-medium">
+                      <Zap size={12} className="animate-pulse" />
+                      Muddati: {new Date(profile.plan_expires_at).toLocaleDateString('uz-UZ')}
+                    </div>
+                  )}
                </div>
             </div>
-            <div className="flex gap-3">
-               <button onClick={() => navigate('/pricing')} className="px-5 py-2 bg-black text-white text-[13px] font-normal rounded-xl hover:opacity-90 transition-all shadow-lg shadow-black/10">Upgrade Pro</button>
-               <button className="px-5 py-2 bg-white border border-slate-100 text-slate-600 text-[13px] font-normal rounded-xl hover:bg-slate-50 transition-all">Settings</button>
+            <div className="flex flex-wrap gap-3">
+               <button onClick={() => navigate('/pricing')} className="flex-1 sm:flex-none text-center px-5 py-2.5 bg-black text-white text-[13px] font-normal rounded-xl hover:opacity-90 transition-all shadow-lg shadow-black/10 whitespace-nowrap cursor-pointer">
+                 {profile?.plan && profile?.plan !== 'Free' ? 'Tariflar' : 'Upgrade Pro'}
+               </button>
+               <button className="flex-1 sm:flex-none text-center px-5 py-2.5 bg-white border border-slate-200 text-slate-600 text-[13px] font-normal rounded-xl hover:bg-slate-50 transition-all shadow-sm whitespace-nowrap">Settings</button>
             </div>
           </div>
 
           <div className="flex gap-4 w-full md:w-auto">
-             <div className="p-1 min-w-[120px] bg-white/70 backdrop-blur-xl border border-white rounded-2xl text-center shadow-sm">
+             <div className="flex-1 p-1 min-w-[100px] md:min-w-[120px] bg-white/90 backdrop-blur-xl border border-slate-100 rounded-2xl text-center shadow-sm">
                 <div className="text-[9px] font-medium text-slate-400 uppercase tracking-widest mt-2 mb-1">Messages</div>
                 <div className="text-xl font-normal text-slate-900 mb-2">{stats.messages}</div>
              </div>
-             <div className="p-1 min-w-[120px] bg-white/70 backdrop-blur-xl border border-white rounded-2xl text-center shadow-sm">
+             <div className="flex-1 p-1 min-w-[100px] md:min-w-[120px] bg-white/90 backdrop-blur-xl border border-slate-100 rounded-2xl text-center shadow-sm">
                 <div className="text-[9px] font-medium text-slate-400 uppercase tracking-widest mt-2 mb-1">Credits</div>
                 <div className="text-xl font-normal text-slate-900 mb-2">{profile?.credits?.toLocaleString() || 0}</div>
              </div>
@@ -146,21 +166,21 @@ function ProfilePage({ session }) {
         </section>
 
         {/* --- STATS & PROGRESS --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-16">
           
-          <div className="lg:col-span-2 space-y-10">
+          <div className="lg:col-span-2 space-y-6 md:space-y-10">
             <div className="flex items-center justify-between">
                <h3 className="text-[11px] font-medium text-slate-400 uppercase tracking-[0.25em]">Subject Mastery</h3>
                <TrendingUp size={16} strokeWidth={1.5} className="text-slate-300" />
             </div>
-            <div className="bg-white/40 backdrop-blur-sm p-8 rounded-[32px] border border-white/50 grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10">
+            <div className="bg-white/90 backdrop-blur-sm p-5 md:p-8 rounded-[24px] md:rounded-[32px] border border-slate-100 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-6 md:gap-y-10">
               {[
                 { key: 'language', label: 'Language', icon: Globe, color: 'bg-indigo-500' },
                 { key: 'math', label: 'Mathematics', icon: Calculator, color: 'bg-rose-500' },
                 { key: 'coding', label: 'Coding', icon: Code2, color: 'bg-emerald-500' },
                 { key: 'writing', label: 'Writing', icon: PenTool, color: 'bg-purple-500' }
               ].map(({ key, label, icon: Icon, color }) => (
-                <div key={key} className="space-y-4">
+                <div key={key} className="space-y-3 md:space-y-4">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2.5 text-[14px] font-normal text-slate-600">
                        <Icon size={16} strokeWidth={1.5} className="text-slate-300" />
@@ -168,26 +188,26 @@ function ProfilePage({ session }) {
                     </div>
                     <span className="text-[12px] font-normal text-slate-400">{dynamicData.subjects[key]}%</span>
                   </div>
-                  <div className="h-1 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100">
-                    <div className={`h-full ${color} rounded-full transition-all duration-1000 opacity-60`} style={{ width: `${dynamicData.subjects[key]}%` }}></div>
+                  <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-100">
+                    <div className={`h-full ${color} rounded-full transition-all duration-1000 opacity-80`} style={{ width: `${dynamicData.subjects[key]}%` }}></div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="space-y-10">
+          <div className="space-y-6 md:space-y-10">
             <div className="flex items-center justify-between">
                <h3 className="text-[11px] font-medium text-slate-400 uppercase tracking-[0.25em]">Weekly Activity</h3>
                <Activity size={16} strokeWidth={1.5} className="text-slate-300" />
             </div>
-            <div className="bg-white/40 backdrop-blur-sm p-8 rounded-[32px] border border-white/50">
+            <div className="bg-white/90 backdrop-blur-sm p-5 md:p-8 rounded-[24px] md:rounded-[32px] border border-slate-100 shadow-sm">
                <div className="flex items-end justify-between h-28 gap-2">
                  {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
                    <div key={i} className="flex-1 flex flex-col items-center gap-3 group">
-                     <div className="w-full bg-slate-100/50 rounded-lg relative overflow-hidden flex items-end h-full">
+                     <div className="w-full bg-slate-100/80 rounded-lg relative overflow-hidden flex items-end h-full border border-slate-50">
                        <div 
-                         className="w-full bg-indigo-400/40 rounded-lg transition-all duration-1000 group-hover:bg-indigo-500/50" 
+                         className="w-full bg-indigo-500/60 rounded-lg transition-all duration-1000 group-hover:bg-indigo-600" 
                          style={{ height: `${dynamicData.activity[i]}%` }}
                        ></div>
                      </div>
@@ -200,17 +220,17 @@ function ProfilePage({ session }) {
         </div>
 
         {/* --- ACHIEVEMENTS --- */}
-        <section className="space-y-10 pt-6 border-t border-slate-50">
+        <section className="space-y-6 md:space-y-10 pt-6 border-t border-slate-50">
            <div className="flex items-center justify-between">
               <h3 className="text-[11px] font-medium text-slate-400 uppercase tracking-[0.25em]">Milestones</h3>
            </div>
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
               {[
                 { key: 'solver', label: 'Problem Solver', icon: Zap, desc: 'Solved 5+ complex problems', color: 'text-amber-500 bg-amber-50 border-amber-100' },
                 { key: 'coder', label: 'Tech Specialist', icon: Code2, desc: 'Explored programming concepts', color: 'text-emerald-500 bg-emerald-50 border-emerald-100' },
                 { key: 'polyglot', label: 'Global Learner', icon: Globe, desc: 'Studied multiple languages', color: 'text-indigo-500 bg-indigo-50 border-indigo-100' }
               ].map(ach => (
-                <div key={ach.key} className={`p-6 rounded-[32px] border transition-all duration-700 flex items-start gap-5 ${dynamicData.achievements[ach.key] ? 'bg-white border-slate-100 shadow-sm' : 'bg-slate-50/50 border-transparent opacity-30 grayscale'}`}>
+                <div key={ach.key} className={`p-5 md:p-6 rounded-[24px] md:rounded-[32px] border transition-all duration-700 flex items-start gap-5 ${dynamicData.achievements[ach.key] ? 'bg-white border-slate-100 shadow-sm' : 'bg-slate-50/50 border-transparent opacity-30 grayscale'}`}>
                   <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 border ${dynamicData.achievements[ach.key] ? ach.color : 'bg-white border-slate-200 text-slate-300'}`}>
                     <ach.icon size={20} strokeWidth={1.5} />
                   </div>

@@ -222,7 +222,7 @@ const MathCenter = () => {
       <div className="flex-1 max-w-[1600px] w-full mx-auto p-4 md:p-6 flex flex-col overflow-hidden">
         
         <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-2xl font-normal tracking-tight text-slate-800">Math Center</h1>
+          <h1 className="hidden md:block text-2xl font-normal tracking-tight text-slate-800">Math Center</h1>
           <div className="flex items-center gap-4">
              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-semibold uppercase tracking-widest">
                 <Brain size={12} /> Handwriting OCR Active

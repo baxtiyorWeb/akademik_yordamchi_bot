@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ChevronLeft, Trash2, Copy, BookOpen, 
@@ -10,6 +10,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import NotebookEntryView from './NotebookEntryView';
 
 // SVG Gradient component to be used by icons
 const IconGradient = () => (
@@ -24,6 +25,7 @@ const IconGradient = () => (
 function NotebookPage({ session }) {
   const navigate = useNavigate();
   const { entries, isLoading, deleteEntry } = useNotebook(session);
+  const [activeEntry, setActiveEntry] = useState(null);
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
@@ -32,16 +34,21 @@ function NotebookPage({ session }) {
 
   const handleDelete = (id) => {
     deleteEntry(id);
+    if (activeEntry?.id === id) setActiveEntry(null);
     toast.info('O\'CHIRILDI');
   };
+
+  if (activeEntry) {
+    return <NotebookEntryView entry={activeEntry} session={session} onBack={() => setActiveEntry(null)} />;
+  }
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#fcfdfe] overflow-hidden">
       <IconGradient />
       
       {/* --- BALANCED HEADER --- */}
-      <div className="px-8 py-8 border-b border-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-        <div className="space-y-1">
+      <div className="px-6 md:px-8 py-4 md:py-8 border-b border-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 md:gap-6">
+        <div className="hidden md:block space-y-1">
           <h1 className="text-[20px] font-semibold text-slate-900 tracking-tight">Notebook LM</h1>
           <p className="text-[12px] text-slate-400 font-medium uppercase tracking-widest">{entries.length} TA SAQLANGAN MANBA</p>
         </div>
@@ -96,7 +103,7 @@ function NotebookPage({ session }) {
                      <Sparkles size={14} stroke="url(#nb-blue-purple)" />
                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">AI Note</span>
                   </div>
-                  <button className="text-[12px] font-bold text-indigo-600 hover:text-indigo-700 transition-all flex items-center gap-1.5 uppercase tracking-widest">
+                  <button onClick={() => setActiveEntry(entry)} className="text-[12px] font-bold text-indigo-600 hover:text-indigo-700 transition-all flex items-center gap-1.5 uppercase tracking-widest">
                     OCHISH <ExternalLink size={12} strokeWidth={2.5} />
                   </button>
                 </div>

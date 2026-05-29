@@ -1,14 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #171717;
-  --color-primary-light: #404040;
+  --color-primary: #0f172a;
+  --color-primary-light: #334155;
   --color-accent: #6366f1;
-  --color-bg-main: #fcfcfc;
+  --color-accent-hover: #4f46e5;
+  --color-bg-main: #fafaf9;
   --color-bg-sidebar: #ffffff;
-  --color-border-subtle: #e5e5e5;
-  --color-text-main: #171717;
-  --color-text-muted: #737373;
+  --color-border-subtle: #f1f5f9;
+  --color-text-main: #0f172a;
+  --color-text-muted: #64748b;
 }
 
 :root {
@@ -17,139 +18,171 @@
 
 body {
   font-family: var(--font-sans);
-  background-color: #f8fafc;
+  background-color: var(--color-bg-main);
   color: var(--color-text-main);
   -webkit-font-smoothing: antialiased;
   font-weight: 400;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Global Cursor Pointer for all buttons */
 button, [role="button"], a {
   cursor: pointer !important;
 }
 
-/* Colorful NanoAI Mesh Gradient Background */
+/* Beautiful Animated Background for Chat/Main areas */
 .nano-bg {
   background: 
-    radial-gradient(circle at 10% 10%, rgba(129, 140, 248, 0.2) 0%, transparent 50%),
-    radial-gradient(circle at 90% 10%, rgba(244, 114, 182, 0.2) 0%, transparent 50%),
-    radial-gradient(circle at 90% 90%, rgba(56, 189, 248, 0.2) 0%, transparent 50%),
-    radial-gradient(circle at 10% 90%, rgba(251, 191, 36, 0.2) 0%, transparent 50%),
-    #ffffff;
+    radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 90% 20%, rgba(236, 72, 153, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 80% 90%, rgba(14, 165, 233, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 20% 80%, rgba(245, 158, 11, 0.1) 0%, transparent 40%),
+    var(--color-bg-main);
+  background-attachment: fixed;
 }
 
-/* Enhanced Contrast Containers */
+/* Glassmorphism Classes */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+}
+
 .content-card {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 24px;
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+}
+.content-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.08);
 }
 
-/* NanoAI Specific Cards */
-.nano-card {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
-}
-
-.nano-icon-card {
-  width: 110px;
-  height: 130px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  background: white;
-  border-radius: 28px;
-  border: 1px solid #f1f5f9;
-  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-.nano-icon-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
-  border-color: #e2e8f0;
-}
-
-.nano-icon-card.active {
-  background: linear-gradient(135deg, #e0f2fe 0%, #fef9c3 100%);
-  border-color: rgba(255, 255, 255, 0.8);
-}
-
-/* Sidebar Fixes */
+/* Navigation items */
 .nav-item {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 14px;
-  font-weight: 400;
-  color: #64748b;
-  transition: all 0.2s ease;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
 }
 
 .nav-item:hover {
-  background: #f8fafc;
-  color: #1e293b;
+  background: rgba(241, 245, 249, 0.8);
+  color: var(--color-text-main);
+  transform: translateX(4px);
 }
 
 .nav-item.active {
-  background: #f1f5f9;
-  color: #1e293b;
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--color-accent);
 }
 
 .nav-item svg {
-  color: #94a3b8;
+  color: inherit;
   flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+.nav-item:hover svg {
+  transform: scale(1.1);
 }
 
-.nav-item.active svg {
-  color: #1e293b;
-}
-
-/* Custom Scrollbar */
+/* Custom Scrollbar - Sleeker */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #f1f5f9;
+  background: #cbd5e1;
   border-radius: 10px;
 }
-
-/* Typography */
-.nano-title {
-  font-size: 2.75rem;
-  font-weight: 400;
-  letter-spacing: -0.03em;
-  color: #1e293b;
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
-.nano-subtitle {
-  font-size: 1.25rem;
-  font-weight: 400;
-  color: #94a3b8;
+/* Tooltip (Simple CSS implementation) */
+[data-tooltip] {
+  position: relative;
+}
+[data-tooltip]::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%) translateY(5px);
+  padding: 6px 10px;
+  background-color: rgba(15, 23, 42, 0.9);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 50;
+  letter-spacing: 0.5px;
+}
+[data-tooltip]:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
-/* Pricing Page Styles */
+/* Typography refinements */
+.heading-premium {
+  background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animated button glow */
+.btn-glow {
+  position: relative;
+}
+.btn-glow::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+  border-radius: inherit;
+  z-index: -1;
+  filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.btn-glow:hover::after {
+  opacity: 0.5;
+}
+
+/* Pricing cards */
 .pricing-card {
-  background: white;
+  background: rgba(255,255,255,0.9);
   border: 1px solid #f1f5f9;
   border-radius: 32px;
   padding: 40px;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
 }
-
 .pricing-card:hover {
   border-color: #e2e8f0;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-8px);
 }
-
 .pricing-card.popular {
-  border-color: #6366f1;
-  box-shadow: 0 20px 40px rgba(99, 102, 241, 0.08);
+  border: 2px solid var(--color-accent);
+  box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
 }

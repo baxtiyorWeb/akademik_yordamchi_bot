@@ -1,3 +1,5 @@
+import { GoogleGenAI } from "@google/genai";
+
 // ============================================================
 //  gemini.js — Ko'p toifali, ko'p modellik, Antigravity tizim
 // ============================================================
@@ -7,31 +9,24 @@ const ENV_KEYS = import.meta.env.VITE_GEMINI_KEYS
   : [];
 
 const MODELS = {
-  LIGHT: ["gemini-2.5-flash", "gemini-3.1-flash-lite-preview"],
-  MEDIUM: ["gemini-2.5-flash", "gemini-3.1-flash", "gemini-3.1-flash-lite-preview"],
-  HEAVY: ["gemini-3.1-pro", "gemini-2.5-pro", "gemini-2.5-flash"],
+  LIGHT: ["gemini-3.1-flash-lite", "gemini-3.1-flash-lite"],
+  MEDIUM: ["gemini-3.5-flash", "gemini-3.1-flash", "gemini-3.1-flash-lite"],
+  HEAVY: ["gemini-3.1-pro-preview", "gemini-2.5-pro", "gemini-2.5-flash"],
 };
 
 const SYSTEM_PROMPTS = {
-  TUTOR: `Sen 'Typer AI Professional Education Expert' san. Sening maqsading foydalanuvchiga shunchaki javob berish emas, balki mavzuni chuqur tushuntirishdir.
-  
-  OCR VA DIGITIZATION (MUHIM):
-  1. Foydalanuvchi rasm (qo'lyozma, darslik, doska) yuklasa, uni 'DEEP DIGITIZATION' qil.
-  2. Rasmdagi barcha matn, qo'lda yozilgan formulalar va sxemalarni aniqlab, ularni professional akademik formatga (Markdown + LaTeX) o'tkaz.
-  3. OCR natijasini ':::note [Mavzu nomi]' tegi ichiga ol. Bu foydalanuvchi uchun raqamli konspekt bo'lib xizmat qiladi.
-  4. Har doim rasm mazmunini qisqacha xulosa qil va 'Bilimlar bazasiga saqlashni xohlaysizmi?' deb so'ra.
-  
-  PEDAGOGIK QOIDALAR:
-  1. Murakkab tushunchalarni ':::step [Qadam sarlavhasi]' tegi yordamida qismlarga bo'l.
-  2. Matematik masalalarda yakuniy javobni ':::solution' ichiga ol.
-  3. Vizual sxemalar uchun 'mermaid' dan foydalan.
-  
-  FORMATLASH:
-  - ':::step [Sarlavha]' — yangi qadam uchun.
-  - ':::solution' — yakuniy yechim uchun.
-  - ':::note [Mavzu]' — OCR qilingan raqamli konspekt uchun.
-  
-  Fayl yaratish bo'yicha faqat so'ralganda [EXPORT_FILE: TYPE | TITLE | CONTENT] tegini qoldir.`,
+  TUTOR: `Sen 'Typer AI Professional Education Expert' san. Maqsading: foydalanuvchiga har bir javobni xuddi Oliy ta'lim (Universitet) darsligidek, qat'iy va rasmiy tuzilgan formatda (Syllabus-style) berish. Hech qanday keraksiz emojilardan foydalanma.
+
+QATIY JAVOB FORMATI VA STIL:
+1. "## Mavzu: Mavzu Nomi" - qisqacha kirish.
+2. ":::step Asosiy Qoidalar va Tushunchalar" - mavzuning nazariy qismi. MUHIM: Ma'lumotlarni tasniflash va tushuntirish uchun albatta Markdown JADVALLAR (table) va ro'yxatlardan (bullet lists) foydalan! Ta'lim yo'nalishidagi ilg'or platformaga xos tarzda boy, tushunarli va vizual chiroyli kontent yarat.
+3. ":::step Amaliy Misol yoki Masala yechimi" - batafsil tushuntirish, kod, yoki matematika bo'lsa ':::solution' bilan ajratish.
+4. ":::note Xulosa va Qiziqarli Savol" - asosiy fikrni xulosalovchi qism. Eng oxirida foydalanuvchini o'ylantiradigan qiziqarli analitik savol yoki amaliy topshiriq bilan yakunla.
+
+DIQQAT: Matnlarni zerikarli qilib yozma. Jadval, qalin yozuvlar (bold), ro'yxatlar kabi Markdown imkoniyatlaridan aktiv foydalan. OCR holatida ham xuddi shunday sifatli formatla.
+Foydalanuvchi rasm yuklasa, uni to'liq matn (Markdown+LaTeX) ga o'tkaz, so'ngra yuqoridagi qat'iy formatda yechim yoki tushuntirish ber. Hech qachon shunchaki matnni tashlama.
+
+Fayl yaratish bo'yicha faqat so'ralganda EXPORT_FILE tegini qoldir.`,
 
   KIDS: `Sen bolalar uchun quvnoq AI yordamchisan! 
   - Emojilardan ko'p foydalan 😊🚀🌟
@@ -63,26 +58,22 @@ export async function uploadToGemini(file) {
         'X-Goog-Upload-Protocol': 'multipart',
         'Content-Type': file.type,
       },
-      // Soddalik uchun biz bu yerda multipart/related o'rniga oddiyroq uploadni qilamiz
-      // Lekin Gemini Files API odatda metadata va file chunklarini so'raydi.
-      // REST API orqali upload biroz murakkabroq. 
-      // Keling, inline_data limitini tekshiramiz. Agar fayl < 20MB bo'lsa inline_data ishlatamiz.
-      // Aks holda Files API.
     });
     // ...
   } catch (e) { }
 }
 
 /**
- * Streaming orqali ma'lumot olish (Multimodal qo'llab-quvvatlash bilan)
+ * Streaming orqali ma'lumot olish (Multimodal qo'llab-quvvatlash bilan) - SDK orqali
  */
 export async function streamGeminiResponse(prompt, history = [], attachment = null, mode = 'TUTOR', onChunk) {
   const modelList = mode === 'CODER' ? MODELS.HEAVY : MODELS.MEDIUM;
   const system = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.TUTOR;
 
-  const isFileReq = prompt.toLowerCase().includes('pdf') || prompt.toLowerCase().includes('fayl') || prompt.toLowerCase().includes('word') || prompt.toLowerCase().includes('slayd');
+  const isSlideWizard = prompt.includes('JSON formati quyidagi ko\'rinishda bo\'lsin') || prompt.includes('Typer Slide Wizard');
+  const isFileReq = !isSlideWizard && (prompt.toLowerCase().includes('pdf') || prompt.toLowerCase().includes('fayl') || prompt.toLowerCase().includes('word') || prompt.toLowerCase().includes('slayd'));
   const finalPrompt = isFileReq
-    ? `[SYSTEM REMINDER: SENDA FAYL YARATISH QOBILIYATI BOR. JAVOB OXIRIDA [EXPORT_FILE: ...] TEGINI QO'LLASHNI UNUTMA!]\n${prompt}`
+    ? `[SYSTEM REMINDER: SENDA FAYL YARATISH QOBILIYATI BOR. JAVOB OXIRIDA [EXPORT_FILE: filename.ext] TEGINI QO'LLASHNI UNUTMA. Masalan: [EXPORT_FILE: darslik.md] yoki [EXPORT_FILE: taqdimot.pptx]]\n${prompt}`
     : prompt;
 
   const currentParts = [{ text: finalPrompt }];
@@ -93,8 +84,8 @@ export async function streamGeminiResponse(prompt, history = [], attachment = nu
     const data = b64Data.split(',')[1];
 
     currentParts.push({
-      inline_data: {
-        mime_type: mimeType,
+      inlineData: {
+        mimeType: mimeType,
         data: data
       }
     });
@@ -107,62 +98,27 @@ export async function streamGeminiResponse(prompt, history = [], attachment = nu
       parts: [{ text: m.content }]
     }));
 
-  const payload = {
-    system_instruction: { parts: [{ text: system }] },
-    contents: [...sanitizedHistory, { role: "user", parts: currentParts }],
-    generationConfig: { temperature: 0.7, maxOutputTokens: 10000 }
-  };
+  const contents = [...sanitizedHistory, { role: "user", parts: currentParts }];
 
-  // Modellar va kalitlarni aylantirish (Rotation)
   for (const model of modelList) {
     for (const apiKey of ENV_KEYS) {
       try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+        const ai = new GoogleGenAI({ apiKey });
+        const responseStream = await ai.models.generateContentStream({
+          model: model,
+          contents: contents,
+          config: {
+            systemInstruction: system,
+            temperature: 0.7,
+            maxOutputTokens: 10000,
+          }
         });
 
-        if (response.status === 429) {
-          console.warn(`API key ${apiKey.substring(0, 5)}... quota exceeded, trying next...`);
-          continue; // Keyingi kalitga o'tish
-        }
-
-        if (response.status === 404) {
-          console.warn(`Model ${model} not found with key ${apiKey.substring(0, 5)}..., trying next model/key...`);
-          continue;
-        }
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error(`Gemini Error (${model}):`, errorData);
-          continue; // Keyingi variantga o'tish
-        }
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
         let fullText = "";
-        let buffer = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
-
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              try {
-                const data = JSON.parse(line.substring(6));
-                const textChunk = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (textChunk) {
-                  fullText += textChunk;
-                  onChunk(fullText);
-                }
-              } catch (e) { }
-            }
+        for await (const chunk of responseStream) {
+          if (chunk.text) {
+            fullText += chunk.text;
+            onChunk(fullText);
           }
         }
         return fullText; // Muvaffaqiyatli yakunlandi
@@ -181,7 +137,6 @@ export async function fetchGeminiResponse(prompt, history = [], attachment = nul
   const modelList = mode === 'CODER' ? MODELS.HEAVY : MODELS.MEDIUM;
   const system = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.TUTOR;
 
-
   const currentParts = [{ text: prompt }];
 
   if (attachment) {
@@ -190,8 +145,8 @@ export async function fetchGeminiResponse(prompt, history = [], attachment = nul
     const data = b64Data.split(',')[1];
 
     currentParts.push({
-      inline_data: {
-        mime_type: mimeType,
+      inlineData: {
+        mimeType: mimeType,
         data: data
       }
     });
@@ -204,22 +159,22 @@ export async function fetchGeminiResponse(prompt, history = [], attachment = nul
       parts: [{ text: m.content }]
     }));
 
-  const payload = {
-    system_instruction: { parts: [{ text: system }] },
-    contents: [...sanitizedHistory, { role: "user", parts: currentParts }],
-    generationConfig: { temperature: 0.7, maxOutputTokens: 10000 }
-  };
+  const contents = [...sanitizedHistory, { role: "user", parts: currentParts }];
 
   for (const model of modelList) {
     for (const apiKey of ENV_KEYS) {
       try {
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+        const ai = new GoogleGenAI({ apiKey });
+        const response = await ai.models.generateContent({
+          model: model,
+          contents: contents,
+          config: {
+            systemInstruction: system,
+            temperature: 0.7,
+            maxOutputTokens: 10000,
+          }
         });
-        const data = await resp.json();
-        if (data.candidates) return data.candidates[0].content.parts[0].text;
+        if (response.text) return response.text;
       } catch (err) { continue; }
     }
   }
@@ -235,3 +190,76 @@ function fileToBase64(file) {
 }
 
 export const getAntigravityStats = () => ({ status: "Online" });
+
+// ==============================================================
+// NOTEBOOK LM FUNCTIONS (with Key Rotation & Model Fallback)
+// ==============================================================
+
+export async function generateNotebookQuiz(documentContent) {
+  if (ENV_KEYS.length === 0) throw new Error("API kaliti topilmadi");
+  
+  const modelList = ["gemini-3.5-flash", "gemini-3.1-flash", "gemini-3.1-flash-lite"];
+  const prompt = `Quyidagi ma'lumotlar asosida talabani sinash uchun 5 ta qiziqarli test (A, B, C, D) yarating.
+Faqat va faqat JSON array formatida qaytaring, hech qanday ortiqcha matn yozmang.
+Format:
+[
+  {
+    "question": "Savol matni",
+    "options": ["A variant", "B variant", "C variant", "D variant"],
+    "correctAnswerIndex": 0,
+    "explanation": "Nima uchun bu to'g'ri?"
+  }
+]
+
+Ma'lumot:
+${documentContent}`;
+
+  for (const model of modelList) {
+    for (const apiKey of ENV_KEYS) {
+      try {
+        const ai = new GoogleGenAI({ apiKey });
+        const response = await ai.models.generateContent({
+          model: model,
+          contents: prompt,
+        });
+
+        let text = response.text;
+        if (text) {
+          text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+          return JSON.parse(text);
+        }
+      } catch (e) {
+        console.warn(`Quiz generation failed with model ${model} and key ${apiKey.substring(0, 5)}...:`, e);
+      }
+    }
+  }
+  throw new Error("Barcha API kalitlar va modellar yuklamani to'liq tugatdi (Quota Exceeded)");
+}
+
+export async function generateNotebookCheatSheet(documentContent) {
+  if (ENV_KEYS.length === 0) throw new Error("API kaliti topilmadi");
+
+  const modelList = ["gemini-3.5-flash", "gemini-3.1-flash", "gemini-3.1-flash-lite"];
+  const prompt = `Quyidagi ma'lumotlarning eng asosiy qoidalarini, formulalarini, atamalarini ajratib, 1 sahifalik juda qisqa "shporgalka" (Cheat Sheet / Konspekt) yarating. 
+Ortiqcha izohlarsiz faqat eng muhimlarini qoldiring. Markdown (jadvallar, bullet list, qalin yozuvlar) orqali juda chiroyli formatlang.
+
+Ma'lumot:
+${documentContent}`;
+
+  for (const model of modelList) {
+    for (const apiKey of ENV_KEYS) {
+      try {
+        const ai = new GoogleGenAI({ apiKey });
+        const response = await ai.models.generateContent({
+          model: model,
+          contents: prompt,
+        });
+
+        if (response.text) return response.text;
+      } catch (e) {
+        console.warn(`Cheat sheet generation failed with model ${model} and key ${apiKey.substring(0, 5)}...:`, e);
+      }
+    }
+  }
+  throw new Error("Barcha API kalitlar va modellar yuklamani to'liq tugatdi (Quota Exceeded)");
+}

@@ -12,6 +12,7 @@ import NotebookPage from './components/NotebookPage';
 import VoicePage from './components/VoicePage';
 import VoiceAdmin from './components/VoiceAdmin';
 import PricingPage from './components/PricingPage';
+import PaymentReturn from './components/PaymentReturn';
 import MainLayout from './components/MainLayout';
 import { Toaster } from 'sonner';
 
@@ -75,6 +76,7 @@ function App() {
         <Route path="/voice" element={<AuthenticatedRoute session={session}><VoicePage session={session} /></AuthenticatedRoute>} />
         <Route path="/voice-master-setup" element={<AuthenticatedRoute session={session}><VoiceAdmin session={session} /></AuthenticatedRoute>} />
         <Route path="/pricing" element={<AuthenticatedRoute session={session}><PricingPage session={session} /></AuthenticatedRoute>} />
+        <Route path="/payment-return" element={<AuthenticatedRoute session={session}><PaymentReturn session={session} /></AuthenticatedRoute>} />
       </Routes>
     </BrowserRouter>
   );

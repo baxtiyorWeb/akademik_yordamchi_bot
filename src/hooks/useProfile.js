@@ -12,7 +12,7 @@ export const useProfile = (session) => {
       if (!userId) return null;
       const { data, error } = await supabase
         .from('profiles')
-        .select('credits')
+        .select('credits, plan, plan_expires_at')
         .eq('id', userId)
         .single();
       

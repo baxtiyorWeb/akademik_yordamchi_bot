@@ -55,6 +55,16 @@ const ChatMessage = React.memo(({ msg, previousMsg, onSave, onRegenerate, onAuto
     if (exportMatch) {
       cleaned = cleaned.replace(exportRegex, '').trim();
       exportInfo = { type: exportMatch[1].toUpperCase(), title: exportMatch[2].trim(), content: exportMatch[3].trim() };
+    } else {
+      const filenameRegex = /\[EXPORT_FILE:\s*([^\|\]]+?)\]/i;
+      const filenameMatch = content.match(filenameRegex);
+      if (filenameMatch) {
+        cleaned = cleaned.replace(filenameRegex, '').trim();
+        const filename = filenameMatch[1].trim();
+        const parts = filename.split('.');
+        const ext = parts[parts.length - 1].toUpperCase();
+        exportInfo = { type: ext, title: filename, content: cleaned };
+      }
     }
     return { cleanContent: cleaned, exportData: exportInfo };
   }, [content]);
@@ -147,10 +157,10 @@ const ChatMessage = React.memo(({ msg, previousMsg, onSave, onRegenerate, onAuto
 
       return <code className="bg-primary/15 text-primary-light px-1.5 py-0.5 rounded font-mono text-[0.9em]">{children}</code>;
     },
-    table: ({ children }) => <div className="overflow-x-auto my-4 rounded-xl border border-border-custom bg-white/5"><table className="w-full border-collapse text-sm">{children}</table></div>,
+    table: ({ children }) => <div className="overflow-x-auto my-4 rounded-xl border border-border-custom bg-white/5 w-full"><table className="w-full border-collapse text-[12px] sm:text-sm">{children}</table></div>,
     thead: ({ children }) => <thead className="bg-primary/10">{children}</thead>,
-    th: ({ children }) => <th className="px-4 py-3 text-left border-b border-border-custom font-bold text-primary-light">{children}</th>,
-    td: ({ children }) => <td className="px-4 py-2.5 border-b border-white/5 text-text-muted">{children}</td>,
+    th: ({ children }) => <th className="px-2 sm:px-4 py-2 sm:py-3 text-left border-b border-border-custom font-bold text-primary-light">{children}</th>,
+    td: ({ children }) => <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 border-b border-white/5 text-text-muted break-words whitespace-normal">{children}</td>,
     blockquote: ({ children }) => <blockquote className="border-l-4 border-primary bg-primary/5 my-4 p-4 rounded-r-xl text-text-main italic">{children}</blockquote>,
     h1: ({ children }) => <h1 className={`font-black my-6 pb-2 border-b flex items-center gap-2 ${isKids ? 'text-2xl text-pink-500 border-pink-100' : 'text-xl text-text-main border-primary/20'}`}><Sparkles size={20} /> {children}</h1>,
     h2: ({ children }) => <h2 className={`font-bold my-5 pl-3 border-l-4 ${isKids ? 'text-xl text-amber-500 border-amber-400' : 'text-lg text-text-main border-sky-400'}`}>{children}</h2>,
@@ -180,6 +190,17 @@ const ChatMessage = React.memo(({ msg, previousMsg, onSave, onRegenerate, onAuto
         const pptx = new PptxGenJS(); const slide = pptx.addSlide();
         slide.addText(content, { x: 0.5, y: 0.5, w: '90%', h: '80%', fontSize: 18 });
         await pptx.writeFile({ fileName });
+      } else if (type === 'XLSX') {
+        const ws = XLSX.utils.aoa_to_sheet(content.split('\n').map(l => [l]));
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "AI");
+        XLSX.writeFile(wb, fileName);
+      } else {
+        // Plain text formats (MD, TXT, HTML, JS, JSON, etc.)
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = fileName;
+        a.click();
       }
       toast.success('Tayyor!', { id: loadingId });
     } catch (err) { toast.error('Xatolik!', { id: loadingId }); }
