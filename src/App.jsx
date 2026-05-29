@@ -9,8 +9,6 @@ import KidsChat from './components/KidsChat';
 import ProfilePage from './components/ProfilePage';
 import MathCenter from './components/MathCenter';
 import NotebookPage from './components/NotebookPage';
-import VoicePage from './components/VoicePage';
-import VoiceAdmin from './components/VoiceAdmin';
 import PricingPage from './components/PricingPage';
 import PaymentReturn from './components/PaymentReturn';
 import MainLayout from './components/MainLayout';
@@ -66,15 +64,13 @@ function App() {
           path="/login"
           element={!session ? <AuthPage setSession={setSession} /> : <Navigate to="/tutor" />}
         />
-        
+
         {/* Protected Routes with MainLayout */}
         <Route path="/tutor" element={<AuthenticatedRoute session={session}><TutorChat session={session} /></AuthenticatedRoute>} />
         <Route path="/kids" element={<AuthenticatedRoute session={session}><KidsChat session={session} /></AuthenticatedRoute>} />
         <Route path="/profile" element={<AuthenticatedRoute session={session}><ProfilePage session={session} /></AuthenticatedRoute>} />
         <Route path="/notebook" element={<AuthenticatedRoute session={session}><NotebookPage session={session} /></AuthenticatedRoute>} />
         <Route path="/math" element={<AuthenticatedRoute session={session}><MathCenter session={session} /></AuthenticatedRoute>} />
-        <Route path="/voice" element={<AuthenticatedRoute session={session}><VoicePage session={session} /></AuthenticatedRoute>} />
-        <Route path="/voice-master-setup" element={<AuthenticatedRoute session={session}><VoiceAdmin session={session} /></AuthenticatedRoute>} />
         <Route path="/pricing" element={<AuthenticatedRoute session={session}><PricingPage session={session} /></AuthenticatedRoute>} />
         <Route path="/payment-return" element={<AuthenticatedRoute session={session}><PaymentReturn session={session} /></AuthenticatedRoute>} />
       </Routes>

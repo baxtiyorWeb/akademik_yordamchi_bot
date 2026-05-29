@@ -4,7 +4,7 @@ import {
   User, Shield, Zap, TrendingUp, BookOpen,
   Camera, Settings, LogOut, Brain, Star,
   Award, CreditCard, ChevronRight, CheckCircle2,
-  Globe, Calculator, Code2, PenTool,
+  Globe, Calculator, PenTool,
   MessageSquare, Sparkles, PieChart, Activity,
   Users, ExternalLink, Mail, MapPin
 } from 'lucide-react';
@@ -16,8 +16,8 @@ function ProfilePage({ session }) {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ messages: 0, notebook: 0 });
   const [dynamicData, setDynamicData] = useState({
-    subjects: { language: 0, math: 0, coding: 0, writing: 0 },
-    achievements: { solver: false, coder: false, polyglot: false },
+    subjects: { language: 0, math: 0, writing: 0 },
+    achievements: { solver: false, polyglot: false },
     activity: [0, 0, 0, 0, 0, 0, 0],
     todaySpent: 0,
     totalSpent: 0
@@ -48,7 +48,7 @@ function ProfilePage({ session }) {
       const messages = messagesData || [];
       const notebookCount = notebookData ? notebookData.length : 0;
 
-      let lang = 0, math = 0, coding = 0, writing = 0;
+      let lang = 0, math = 0, writing = 0;
       let todaySpent = 0;
       const totalSpent = messages.length;
       const activity = [0, 0, 0, 0, 0, 0, 0];
@@ -60,7 +60,6 @@ function ProfilePage({ session }) {
         const text = (msg.content || '').toLowerCase();
         if (text.match(/ingliz|rus|tarjima|grammar|til|ielts/)) lang++;
         if (text.match(/matematika|misol|tenglama|math|qo'shish/)) math++;
-        if (text.match(/kod|python|javascript|html|css|vibe-coding|dastur/)) coding++;
         if (text.match(/insho|referat|maqola|essay|yozish/)) writing++;
 
         const msgDate = new Date(msg.created_at);
@@ -69,17 +68,15 @@ function ProfilePage({ session }) {
         if (msgDate >= today) todaySpent++;
       });
 
-      const totalSub = lang + math + coding + writing || 1;
+      const totalSub = lang + math + writing || 1;
       const subjects = {
         language: Math.min(100, Math.round((lang / totalSub) * 100) + (lang > 0 ? 20 : 0)),
         math: Math.min(100, Math.round((math / totalSub) * 100) + (math > 0 ? 20 : 0)),
-        coding: Math.min(100, Math.round((coding / totalSub) * 100) + (coding > 0 ? 20 : 0)),
         writing: Math.min(100, Math.round((writing / totalSub) * 100) + (writing > 0 ? 20 : 0))
       };
 
       const achievements = {
         solver: math >= 5,
-        coder: coding >= 1,
         polyglot: lang >= 5
       };
 
@@ -177,7 +174,6 @@ function ProfilePage({ session }) {
               {[
                 { key: 'language', label: 'Language', icon: Globe, color: 'bg-indigo-500' },
                 { key: 'math', label: 'Mathematics', icon: Calculator, color: 'bg-rose-500' },
-                { key: 'coding', label: 'Coding', icon: Code2, color: 'bg-emerald-500' },
                 { key: 'writing', label: 'Writing', icon: PenTool, color: 'bg-purple-500' }
               ].map(({ key, label, icon: Icon, color }) => (
                 <div key={key} className="space-y-3 md:space-y-4">
@@ -227,7 +223,6 @@ function ProfilePage({ session }) {
            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
               {[
                 { key: 'solver', label: 'Problem Solver', icon: Zap, desc: 'Solved 5+ complex problems', color: 'text-amber-500 bg-amber-50 border-amber-100' },
-                { key: 'coder', label: 'Tech Specialist', icon: Code2, desc: 'Explored programming concepts', color: 'text-emerald-500 bg-emerald-50 border-emerald-100' },
                 { key: 'polyglot', label: 'Global Learner', icon: Globe, desc: 'Studied multiple languages', color: 'text-indigo-500 bg-indigo-50 border-indigo-100' }
               ].map(ach => (
                 <div key={ach.key} className={`p-5 md:p-6 rounded-[24px] md:rounded-[32px] border transition-all duration-700 flex items-start gap-5 ${dynamicData.achievements[ach.key] ? 'bg-white border-slate-100 shadow-sm' : 'bg-slate-50/50 border-transparent opacity-30 grayscale'}`}>

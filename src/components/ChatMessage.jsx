@@ -6,7 +6,6 @@ import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import { Brain, Star, Copy, Check, Volume2, RotateCcw, Code, BookOpen, Calculator, Languages, Sparkles, Mic, Paperclip, Zap, Download, FileText, Presentation, Table, FileJson, Sigma } from 'lucide-react';
 import Mermaid from './Mermaid';
-import VibeEditor from './VibeEditor';
 import { jsPDF } from 'jspdf';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import PptxGenJS from 'pptxgenjs';
@@ -137,10 +136,6 @@ const ChatMessage = React.memo(({ msg, previousMsg, onSave, onRegenerate, onAuto
             )}
           </div>
         );
-      }
-
-      if (!inline && isLongCode && phases.length > 0) {
-        return <VibeEditor code={codeStr} language={lang} isNew={msg.isNew} onAgentError={(err) => onAutoFix?.(codeStr, err, lang)} />;
       }
 
       if (!inline) {

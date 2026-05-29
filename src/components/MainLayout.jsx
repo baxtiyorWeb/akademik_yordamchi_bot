@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutGrid, BookOpen, MessageSquare, Users, AppWindow,
   Settings, LogOut, Search, Plus, Bell, ChevronDown, Command, CreditCard, Mic, Share2,
   Brain, Zap
 } from 'lucide-react';
+import LanguageSwitcher from './LanguageSwitcher';
 import { supabase } from '../supabase';
 import { useNotebook } from '../hooks/useNotebook';
 import { useProfile } from '../hooks/useProfile';
@@ -20,17 +22,17 @@ const IconGradient = () => (
 );
 
 const navItems = [
-  { icon: <LayoutGrid size={18} strokeWidth={2} />, label: 'Dashboard', path: '/profile' },
-  { icon: <MessageSquare size={18} strokeWidth={2} />, label: 'AI Assistant', path: '/tutor' },
-  { icon: <BookOpen size={18} strokeWidth={2} />, label: 'Notebook LM', path: '/notebook' },
-  { icon: <Mic size={18} strokeWidth={2} />, label: 'Lingo Voice', path: '/voice' },
-  { icon: <AppWindow size={18} strokeWidth={2} />, label: 'Math Center', path: '/math' },
-  { icon: <CreditCard size={18} strokeWidth={2} />, label: 'Plans', path: '/pricing' },
+  { icon: <LayoutGrid size={18} strokeWidth={2} />, labelKey: 'dashboard', path: '/profile' },
+  { icon: <MessageSquare size={18} strokeWidth={2} />, labelKey: 'ai_assistant', path: '/tutor' },
+  { icon: <BookOpen size={18} strokeWidth={2} />, labelKey: 'notebook_lm', path: '/notebook' },
+  { icon: <AppWindow size={18} strokeWidth={2} />, labelKey: 'math_center', path: '/math' },
+  { icon: <CreditCard size={18} strokeWidth={2} />, labelKey: 'plans', path: '/pricing' },
 ];
 
 function MainLayout({ children, session }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { entries } = useNotebook(session);
   const { profile } = useProfile(session);
@@ -40,7 +42,8 @@ function MainLayout({ children, session }) {
     navigate('/auth');
   };
 
-  const currentLabel = navItems.find(i => i.path === location.pathname || (i.path === '/' && location.pathname === '/tutor'))?.label || 'Dashboard';
+  const currentNavItem = navItems.find(i => i.path === location.pathname || (i.path === '/' && location.pathname === '/tutor'));
+  const currentLabel = currentNavItem ? t(currentNavItem.labelKey) : t('dashboard');
 
   return (
     <div className="flex h-screen bg-[#fcfdfe] overflow-hidden font-sans text-slate-900">
@@ -58,7 +61,7 @@ function MainLayout({ children, session }) {
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" />
             <input 
               type="text" 
-              placeholder="Qidirish..." 
+              placeholder={t('search_placeholder')} 
               className="w-full pl-10 pr-3 py-2 bg-slate-50 border-none rounded-xl text-[13px] outline-none placeholder:text-slate-400 focus:bg-slate-100 transition-all"
             />
           </div>
@@ -82,13 +85,13 @@ function MainLayout({ children, session }) {
                     stroke: isActive ? 'currentColor' : 'url(#blue-purple-gradient)' 
                   })}
                 </span>
-                {item.label}
+                {t(item.labelKey)}
               </button>
             );
           })}
-          <div className="pt-6 pb-2 px-4 text-[11px] font-bold text-slate-300 uppercase tracking-widest opacity-60">Workspace</div>
+          <div className="pt-6 pb-2 px-4 text-[11px] font-bold text-slate-300 uppercase tracking-widest opacity-60">{t('workspace')}</div>
           <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-500 hover:bg-slate-50">
-            <Plus size={18} stroke="url(#blue-purple-gradient)" /> Yangi joy
+            <Plus size={18} stroke="url(#blue-purple-gradient)" /> {t('new_space')}
           </button>
         </nav>
 
@@ -117,7 +120,7 @@ function MainLayout({ children, session }) {
                   stroke: isActive ? 'url(#blue-purple-gradient)' : 'currentColor',
                 })}
               </span>
-              <span className="text-[9px] tracking-tight mt-1">{item.label}</span>
+              <span className="text-[9px] tracking-tight mt-1">{t(item.labelKey)}</span>
             </button>
           );
         })}
@@ -131,13 +134,13 @@ function MainLayout({ children, session }) {
             <span className="md:hidden text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
               {location.pathname === '/notebook' && `${entries.length} TA SAQLANGAN MANBA`}
               {location.pathname === '/tutor' && "AI Professional Tutor"}
-              {location.pathname === '/voice' && "Lingo Voice Pronunciation"}
               {location.pathname === '/math' && "Math & OCR Center"}
               {location.pathname === '/profile' && "Dashboard Overview"}
               {location.pathname === '/pricing' && "Simple Tariflar"}
             </span>
           </div>
           <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             <button className="p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-all"><Bell size={18} stroke="url(#blue-purple-gradient)" /></button>
             <button className="hidden sm:flex items-center gap-2 px-5 py-2 bg-slate-900 text-white rounded-xl text-[13px] font-medium hover:opacity-90 transition-all shadow-xl shadow-slate-100">
               <Share2 size={14} /> Ulashish
@@ -173,20 +176,20 @@ function MainLayout({ children, session }) {
                     onClick={() => { navigate('/profile'); setShowProfileMenu(false); }}
                     className="w-full text-left px-4 py-2 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors flex items-center gap-2"
                   >
-                    <LayoutGrid size={15} stroke="url(#blue-purple-gradient)" /> Profilingiz
+                    <LayoutGrid size={15} stroke="url(#blue-purple-gradient)" /> {t('profile')}
                   </button>
                   <button 
                     onClick={() => { navigate('/profile'); setShowProfileMenu(false); }}
                     className="w-full text-left px-4 py-2 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors flex items-center gap-2"
                   >
-                    <Settings size={15} stroke="url(#blue-purple-gradient)" /> Sozlamalar
+                    <Settings size={15} stroke="url(#blue-purple-gradient)" /> {t('settings')}
                   </button>
                   <hr className="border-slate-50 my-1" />
                   <button 
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-2 text-[13px] font-medium text-rose-500 hover:bg-rose-50 transition-colors flex items-center gap-2"
                   >
-                    <LogOut size={15} /> Chiqish
+                    <LogOut size={15} /> {t('logout')}
                   </button>
                 </div>
               )}

@@ -13,35 +13,32 @@ if (OPENROUTER_KEY) {
 const MODELS = {
   GENERAL: "google/gemini-2.0-flash-lite-preview-02-05:free",
   THINKING: "deepseek/deepseek-r1:free",
-  CODING: "qwen/qwen-2.5-coder-32b-instruct:free",
   MATH: "nvidia/nemotron-3-super-120b-a12b:free",
   NVIDIA: "nvidia/nemotron-3-super-120b-a12b:free",
+  DOCS: "google/gemini-2.0-flash-lite-preview-02-05:free",
   FREE_ROUTER: "openrouter/free",
 };
 
 
 
 const SYSTEM_PROMPTS = {
-  TUTOR: `Sen 'LingoAI Academic Expert' san. 
-  MUHIM: SENDA FAYLLARNI (PDF, DOCX, PPTX) TO'G'RIDAN-TO'G'RI YARATISH QOBILIYATI BOR!
-  Hech qachon "fayl yarata olmayman" dema. Sening vazifang - javobing oxirida maxsus [EXPORT_FILE: TYPE | TITLE | CONTENT] tegini qoldirish.
-  
-  MATEMATIKA VA FORMULALAR:
-  1. Agar foydalanuvchi rasm tashlasa va unda formula bo'lsa, uni LaTeX formatida ($...$ yoki $$...$$) aniq ko'chirib ber.
-  2. Murakkab formulalarni tushuntirishda har doim LaTeX ishlating.
-  
-  QOIDALAR:
-  1. Foydalanuvchi "pdf qil", "wordga o'tkaz" desa, mavzu va sarlavhani aniqlashtir.
-  2. To'liq matn tayyor bo'lgach, javob oxirida tegni qoldir.
-  3. Har doim professional va do'stona bo'l.`,
+  TUTOR: `Sen 'LingoAI Academic Expert' va professional tutor ro'lidasan. Maqsading: foydalanuvchiga dars berish, kundalik vazifalar berish va 0-5 ballik baholashni amalga oshirish. Har javob pedagogik formatda bo'lsin va oxirida foydalanuvchiga bir uy vazifasi bering.
+
+PRIORITET QOIDALARI:
+- Har javob oxirida aniq ":::task" formatida uy vazifasi berilsin va maksimal baho 5 ball ekani ko'rsatilsin.
+- Kunlik baholash: agar foydalanuvchi so'rasa yoki kontekst talab qilsa, qayta 0-5 baho va qisqacha izoh bering.
+- Foydalanuvchidan kun davomida sarflagan o'qish vaqtini so'rab, "daily study time" sifatida qayd etishni taklif qiling.
+
+MATEMATIKA VA FORMULALAR:
+1. Agar rasmda formula bo'lsa, LaTeX formatida taqdim et.
+2. Murakkab formulalarni tushuntirishda LaTeX ishlating.
+
+Fayl eksporti kerak bo'lsa, oxirida "[EXPORT_FILE: TYPE | TITLE | CONTENT]" tegini qoldiring.`,
 
   KIDS: `Sen bolalar uchun quvnoq AI yordamchisan! 
   - Emojilardan ko'p foydalan 😊🚀🌟
   - Soddalashtirib tushuntir.`,
 
-  CODER: `Sen 'Vibe Coding Agent' san. 
-  - Avtonom ishla. 
-  - Kodni bitta yaxlit HTML faylda ber.`
 };
 
 /**
@@ -56,9 +53,7 @@ export async function streamOpenRouterResponse(prompt, history = [], attachment 
   let model = MODELS.GENERAL;
   const lowerPrompt = prompt.toLowerCase();
 
-  if (mode === 'CODER' || lowerPrompt.includes('kod') || lowerPrompt.includes('program')) {
-    model = MODELS.CODING; // Laguna M.1
-  } else if (lowerPrompt.includes('masala') || lowerPrompt.includes('matem') || lowerPrompt.includes('formula')) {
+  if (lowerPrompt.includes('masala') || lowerPrompt.includes('matem') || lowerPrompt.includes('formula')) {
     model = MODELS.MATH; // Nemotron 3 Super
   } else if (lowerPrompt.includes('tahlil') || lowerPrompt.includes('chuqur') || mode === 'THINKING') {
     model = MODELS.THINKING; // Ring-2.6-1T
@@ -163,9 +158,7 @@ export async function fetchOpenRouterResponse(prompt, history = [], attachment =
   let model = MODELS.GENERAL;
   const lowerPrompt = prompt.toLowerCase();
 
-  if (mode === 'CODER' || lowerPrompt.includes('kod')) {
-    model = MODELS.CODING;
-  } else if (lowerPrompt.includes('masala') || lowerPrompt.includes('matem')) {
+  if (lowerPrompt.includes('masala') || lowerPrompt.includes('matem')) {
     model = MODELS.MATH;
   }
 

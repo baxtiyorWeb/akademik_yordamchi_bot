@@ -33,95 +33,162 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen w-screen mesh-gradient flex items-center justify-center p-6 relative overflow-hidden font-sans">
+    <div className="min-h-screen w-screen bg-[#f8fafc] flex items-center justify-center p-4 md:p-6 relative overflow-hidden font-sans">
 
-      {/* Background Decorative Orbs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/20 rounded-full blur-[120px] animate-pulse delay-1000"></div>
+      {/* Dashboard interfeysidagi kabi yumshoq Mesh Gradient orqa fonlar */}
+      <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-gradient-to-tr from-indigo-200/40 to-purple-200/30 rounded-full blur-[140px] animate-pulse duration-[6s]"></div>
+      <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-gradient-to-br from-sky-200/40 to-indigo-200/30 rounded-full blur-[140px] animate-pulse duration-[8s] delay-1000"></div>
+      <div className="absolute top-[30%] left-[40%] w-[30%] h-[30%] bg-pink-200/20 rounded-full blur-[120px]"></div>
 
-      <div className="w-full max-w-[1100px] grid grid-cols-1 lg:grid-cols-2 bg-white/40 backdrop-blur-3xl rounded-[48px] border border-white/50 shadow-[0_50px_100px_rgba(139,92,246,0.15)] overflow-hidden relative z-10 animate-in fade-in zoom-in duration-700">
+      {/* Asosiy Glassmorphism Kontayner */}
+      <div className="w-full max-w-[1050px] grid grid-cols-1 lg:grid-cols-2 bg-white/60 backdrop-blur-2xl rounded-[32px] md:rounded-[40px] border border-white/80 shadow-[0_32px_64px_-16px_rgba(99,102,241,0.12)] overflow-hidden relative z-10 animate-in fade-in zoom-in-95 duration-500">
 
-        {/* Left Side: Auth Form */}
-        <div className="p-10 lg:p-20 flex flex-col justify-center">
-          <div className="flex items-center gap-4 mb-12 cursor-pointer group" onClick={() => navigate('/')}>
-            <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white shadow-xl group-hover:rotate-6 transition-transform"><Brain size={24} /></div>
-            <span className="text-2xl font-black text-text-main tracking-tight">Typer AI</span>
+        {/* Chap tomon: Yangilangan Elegant Auth Formasi */}
+        <div className="p-8 md:p-14 lg:p-16 flex flex-col justify-center bg-white/30 backdrop-blur-md">
+          {/* Logo Section */}
+          <div className="flex items-center gap-3 mb-10 cursor-pointer group w-fit" onClick={() => navigate('/')}>
+            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-all duration-300">
+              <Brain size={20} />
+            </div>
+            <span className="text-xl font-bold text-slate-900 tracking-tight">Typer <span className="text-indigo-600">AI</span></span>
           </div>
 
-          <div className="mb-10">
-            <h1 className="text-4xl font-black text-text-main mb-4 tracking-tight">{isSignUp ? 'Yangi hisob ochish' : 'Tizimga kirish'}</h1>
-            <p className="text-text-muted font-bold opacity-70">Akademik muvaffaqiyat sari birinchi qadamni tashlang.</p>
+          {/* Sarlavha */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-slate-900 mb-2.5 tracking-tight">
+              {isSignUp ? 'Yangi hisob ochish' : 'Tizimga kirish'}
+            </h1>
+            <p className="text-[14px] font-medium text-slate-500 leading-relaxed">
+              Akademik muvaffaqiyat sari birinchi qadamni tashlang.
+            </p>
           </div>
 
-          <form onSubmit={handleAuth} className="space-y-6">
+          {/* Forma */}
+          <form onSubmit={handleAuth} className="space-y-5">
+            {/* Email Input */}
             <div className="space-y-2">
-              <label className="text-xs font-black text-text-muted uppercase tracking-widest ml-1">Email Manzil</label>
+              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email Manzil</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-text-muted group-focus-within:text-primary transition-colors"><Mail size={20} /></div>
-                <input type="email" placeholder="misol@gmail.com" required value={email} onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-14 pr-6 py-5 bg-white rounded-3xl border border-border-custom outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 font-bold text-text-main transition-all" />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-600 transition-colors">
+                  <Mail size={18} />
+                </div>
+                <input
+                  type="email"
+                  placeholder="misol@gmail.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-11 pr-5 py-3.5 bg-white/70 border border-slate-200/80 rounded-2xl outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/5 font-medium text-[14px] text-slate-900 transition-all placeholder:text-slate-400 shadow-sm"
+                />
               </div>
             </div>
 
+            {/* Password Input */}
             <div className="space-y-2">
-              <label className="text-xs font-black text-text-muted uppercase tracking-widest ml-1">Maxfiy So'z</label>
+              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Maxfiy So'z</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-text-muted group-focus-within:text-primary transition-colors"><Lock size={20} /></div>
-                <input type="password" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-14 pr-6 py-5 bg-white rounded-3xl border border-border-custom outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 font-bold text-text-main transition-all" />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-600 transition-colors">
+                  <Lock size={18} />
+                </div>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-11 pr-5 py-3.5 bg-white/70 border border-slate-200/80 rounded-2xl outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/5 font-medium text-[14px] text-slate-900 transition-all placeholder:text-slate-400 shadow-sm"
+                />
               </div>
             </div>
 
+            {/* Parolni unutdingizmi */}
             {!isSignUp && (
-              <div className="flex justify-end"><button type="button" className="text-xs font-black text-primary hover:underline">Parolni unutdingizmi?</button></div>
+              <div className="flex justify-end">
+                <button type="button" className="text-[12px] font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors">
+                  Parolni unutdingizmi?
+                </button>
+              </div>
             )}
 
-            <button type="submit" disabled={loading} className="w-full py-5 bg-primary text-white rounded-3xl font-black text-lg shadow-2xl shadow-primary/30 hover:bg-primary-dark hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3">
-              {loading ? <div className="w-6 h-6 border-4 border-white/20 border-t-white rounded-full animate-spin"></div> : (isSignUp ? "Ro'yxatdan o'tish" : "Kirish")}
-              {!loading && <ArrowRight size={20} />}
+            {/* Kirish Tugmasi (Asosiy dashboard stilida) */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-semibold text-[15px] shadow-lg shadow-indigo-500/25 active:scale-[0.99] transition-all flex items-center justify-center gap-2 mt-2"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                <>
+                  {isSignUp ? "Ro'yxatdan o'tish" : "Kirish"}
+                  <ArrowRight size={16} />
+                </>
+              )}
             </button>
           </form>
 
-          <div className="mt-12">
-            <div className="relative flex items-center justify-center mb-8">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border-custom"></div></div>
-              <span className="relative px-4 bg-white/0 text-[10px] font-black text-text-muted uppercase tracking-widest">Yoki davom eting</span>
+          {/* Pastki qism */}
+          <div className="mt-8">
+            <div className="relative flex items-center justify-center mb-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200/60"></div>
+              </div>
+              <span className="relative px-3 bg-transparent text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Yoki
+              </span>
             </div>
 
-
-
-            <div className="mt-10 text-center">
-              <button onClick={() => setIsSignUp(!isSignUp)} className="text-sm font-bold text-text-muted">
+            <div className="text-center">
+              <button onClick={() => setIsSignUp(!isSignUp)} className="text-[13px] font-medium text-slate-500 hover:text-slate-700 transition-colors">
                 {isSignUp ? "Hisobingiz bormi? " : "Hisobingiz yo'qmi? "}
-                <span className="text-primary font-black hover:underline">{isSignUp ? "Kirish" : "Ro'yxatdan o'tish"}</span>
+                <span className="text-indigo-600 font-semibold hover:underline">{isSignUp ? "Kirish" : "Ro'yxatdan o'tish"}</span>
               </button>
             </div>
           </div>
         </div>
 
         {/* Right Side: Features/Branding */}
-        <div className="hidden lg:flex bg-gradient-to-br from-primary via-primary-dark to-indigo-900 p-20 flex-col justify-center text-white relative">
-          <div className="absolute inset-0 opacity-10 pointer-events-none">
-            <div className="absolute top-10 left-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
-            <div className="absolute bottom-20 right-20 w-64 h-64 bg-white rounded-full blur-[100px]"></div>
-          </div>
+        {/* Right Side: Features/Branding */}
+        <div className="hidden lg:flex bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 p-16 flex-col justify-center text-white relative border-l border-white/5">
+          {/* Ichki neon nur effektlari */}
+          <div className="absolute top-1/4 left-1/4 w-48 h-48 bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-sky-500/10 rounded-full blur-[80px] pointer-events-none"></div>
 
-          <div className="relative z-10 space-y-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-xl rounded-full text-[10px] font-black tracking-widest uppercase border border-white/10"><Sparkles size={14} fill="currentColor" /> Premium Ta'lim Tizimi</div>
+          <div className="relative z-10 space-y-10">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-white/[0.06] backdrop-blur-md rounded-full text-[10px] font-semibold tracking-wider uppercase border border-white/10 text-indigo-300">
+              <Sparkles size={12} className="text-indigo-400" /> Intellektual Ta'lim Platformasi
+            </div>
 
-            <h2 className="text-5xl font-black leading-tight tracking-tight">Akademik hayotingizni <span className="text-sky-300 italic">avtomatlashtiring</span></h2>
+            <h2 className="text-4xl font-bold leading-[1.25] tracking-tight text-slate-100">
+              Akademik hayotingizni <br />
+              <span className="bg-gradient-to-r from-sky-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent font-extrabold">
+                avtomatlashtiring
+              </span>
+            </h2>
 
-            <div className="space-y-6">
+            <div className="space-y-4">
               {[
-                { icon: <CheckCircle2 className="text-sky-400" />, title: "Gemini 3.1 Flash-Lite AI", desc: "Eng yangi va tezkor multimodal modellar." },
-                { icon: <ShieldCheck className="text-emerald-400" />, title: "Xavfsiz Ma'lumotlar", desc: "Sizning suhbatlaringiz to'liq maxfiy saqlanadi." },
-                { icon: <Zap className="text-amber-400" />, title: "24/7 Qo'llab-quvvatlash", desc: "Har qanday savolga istalgan vaqtda javob." }
+                {
+                  icon: <Brain size={18} className="text-sky-400" />,
+                  title: "Shaxsiy Mentor (Tutor Mode)",
+                  desc: "Murakkab mavzularni zerikarli ma'ruzalarsiz, oddiy va tushunarli tilda o'rgatuvchi aqlli suhbatdosh."
+                },
+                {
+                  icon: <Sparkles size={18} className="text-indigo-400" />,
+                  title: "Mas’uliyatli va Baholovchi Ilk AI",
+                  desc: "Bilimingizni shunchaki tekshirmaydi, balki real vaqtda xatolaringizni tahlil qilib, xolis baho berib boradi."
+                },
+                {
+                  icon: <CheckCircle2 size={18} className="text-emerald-400" />,
+                  title: "Vazifalar Nazorati (Assignments)",
+                  desc: "O'quv rejangiz va topshiriqlaringizni tartibga solib, kunlik o'sishingizni daqiqama-daqiqa hisoblab boradi."
+                }
               ].map((f, i) => (
-                <div key={i} className="flex items-start gap-4 p-6 bg-white/5 rounded-[32px] border border-white/10 hover:bg-white/10 transition-all group">
-                  <div className="mt-1 group-hover:scale-110 transition-transform">{f.icon}</div>
+                <div key={i} className="flex items-start gap-3.5 p-4 bg-white/[0.02] hover:bg-white/[0.05] rounded-2xl border border-white/[0.05] transition-all duration-300">
+                  <div className="mt-0.5">{f.icon}</div>
                   <div>
-                    <h4 className="font-black text-lg mb-1">{f.title}</h4>
-                    <p className="text-sm text-white/60 font-medium leading-relaxed">{f.desc}</p>
+                    <h4 className="font-semibold text-[15px] text-slate-200 mb-0.5">{f.title}</h4>
+                    <p className="text-[13px] text-slate-400 font-normal leading-relaxed">{f.desc}</p>
                   </div>
                 </div>
               ))}

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { streamGeminiResponse } from '../api/gemini';
 import { streamOpenRouterResponse } from '../api/openrouter';
+import { recordMessageEvaluation } from '../api/tutor';
 
 import { useState, useMemo } from 'react';
 
@@ -123,6 +124,26 @@ export const useMessages = (session) => {
         role: 'ai', 
         content: fullReply 
       }]);
+
+      // 5. Agar AI javobi ichida baholovchi JSON bo'lsa, uni ajratib olib Supabase'ga yozamiz
+      try {
+        const jsonMatch = fullReply.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          const grade = parsed.current_message_grade || parsed.current_message_score || parsed.grade || null;
+          const note = parsed.ai_response || parsed.feedback || null;
+          const topics = parsed.topic_status ? [parsed.topic_status] : (parsed.topics || []);
+          if (grade !== null && grade !== undefined) {
+            // record evaluation in daily_reports
+            await recordMessageEvaluation({ userId, messageGrade: Number(grade), topics, note: note || '' });
+            // invalidate related queries so UI widgets update
+            queryClient.invalidateQueries({ queryKey: ['daily_reports', userId] });
+            queryClient.invalidateQueries({ queryKey: ['messages', currentSessionId] });
+          }
+        }
+      } catch (e) {
+        // ignore parse errors
+      }
 
       return { userText, replyText: fullReply, sessionId: currentSessionId };
     },

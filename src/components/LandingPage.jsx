@@ -4,7 +4,7 @@ import {
   Brain, Sparkles, BookOpen, Zap, Star, Shield,
   ChevronRight, Menu, X, ArrowRight, Check,
   Globe, Code2, MessageSquare, TrendingUp,
-  FileText, Notebook, Command, Plus
+  FileText, Notebook, Command, Plus, Smile
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -14,33 +14,33 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
 const NAV_LINKS = [
-  { label: "Features", href: "#features" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "Solutions", href: "#solutions" },
+  { labelKey: "features", href: "#features" },
+  { labelKey: "pricing", href: "#pricing" },
+  { labelKey: "solutions", href: "#solutions" },
 ];
 
 const FEATURES = [
   {
     icon: <Zap size={20} strokeWidth={1.5} />,
-    title: "Multimodal Intelligence",
-    desc: "Analyze PDF, Video, and Audio files instantly using Gemini 3.1 Flash-Lite.",
+    titleKey: "feature_multimodal_title",
+    descKey: "feature_multimodal_desc",
   },
   {
     icon: <Brain size={20} strokeWidth={1.5} />,
-    title: "Reasoning Engine",
-    desc: "Solve complex mathematical and scientific problems with step-by-step logic.",
+    titleKey: "feature_reasoning_title",
+    descKey: "feature_reasoning_desc",
   },
   {
     icon: <Code2 size={20} strokeWidth={1.5} />,
-    title: "Live Previews",
-    desc: "Execute AI-generated code in real-time within your workspace environment.",
+    titleKey: "feature_live_previews_title",
+    descKey: "feature_live_previews_desc",
   },
 ];
 
 const STATS = [
-  { value: "50K+", label: "Active Learners" },
-  { value: "2M+", label: "Tasks Solved" },
-  { value: "99.9%", label: "System Uptime" },
+  { value: "50K+", labelKey: "stats_active_learners" },
+  { value: "2M+", labelKey: "stats_tasks_solved" },
+  { value: "99.9%", labelKey: "stats_system_uptime" },
 ];
 
 const LandingPage = () => {
@@ -84,14 +84,14 @@ const LandingPage = () => {
           </div>
 
           <div className="hidden lg:flex items-center gap-10">
-            {NAV_LINKS.map(l => <a key={l.label} href={l.href} className="text-[13px] font-semibold text-neutral-500 hover:text-black transition-colors">{l.label}</a>)}
+            {NAV_LINKS.map(l => <a key={l.labelKey} href={l.href} className="text-[13px] font-semibold text-neutral-500 hover:text-black transition-colors">{t(l.labelKey)}</a>)}
           </div>
 
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
-            <button className="hidden sm:block text-[13px] font-semibold text-neutral-500 hover:text-black transition-colors" onClick={goToLogin}>Log in</button>
-            <button className="btn-glow bg-black text-white text-[13px] font-semibold px-5 py-2 rounded-lg hover:opacity-90 transition-opacity" onClick={goToLogin} data-tooltip="Tizimga kirish yoki ro'yxatdan o'tish">
-              Get Started
+            <button className="hidden sm:block text-[13px] font-semibold text-neutral-500 hover:text-black transition-colors" onClick={goToLogin}>{t('login')}</button>
+            <button className="btn-glow bg-black text-white text-[13px] font-semibold px-5 py-2 rounded-lg hover:opacity-90 transition-opacity" onClick={goToLogin} data-tooltip={t('login')}>
+              {t('start_for_free')}
             </button>
             <button className="lg:hidden p-2 text-neutral-900" onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -109,20 +109,20 @@ const LandingPage = () => {
 
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <div className="hero-text inline-flex items-center gap-2 px-3 py-1 bg-neutral-50 border border-neutral-100 rounded-full text-[11px] font-bold uppercase tracking-widest text-neutral-500 mb-8">
-            <Sparkles size={12} className="text-neutral-900" /> <span>Powered by Gemini 3.1 Flash-Lite</span>
+            <Sparkles size={12} className="text-neutral-900" /> <span>{t('powered_by')}</span>
           </div>
           <h1 className="hero-text text-5xl lg:text-7xl font-bold tracking-tight text-neutral-900 mb-8 heading-premium leading-[1.05]">
-            The intelligent workspace <br/> for <span className="text-neutral-400">academic excellence.</span>
+            {t('hero_heading_1')} <br/> <span className="text-neutral-400">{t('hero_heading_2')}</span>
           </h1>
           <p className="hero-sub text-lg lg:text-xl text-neutral-500 mb-12 max-w-2xl mx-auto leading-relaxed font-medium">
-            Typer AI centralizes your learning, research, and problem-solving into a single, high-performance environment.
+            {t('hero_subtitle')}
           </p>
           <div className="hero-cta flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button className="btn-glow bg-black text-white px-8 py-3.5 rounded-xl font-semibold text-[15px] shadow-xl shadow-black/10 hover:scale-105 transition-all flex items-center gap-2" onClick={goToLogin}>
-              Start for free <ArrowRight size={18} />
+              {t('start_for_free')} <ArrowRight size={18} />
             </button>
-            <button className="text-neutral-500 hover:text-indigo-600 hover:bg-indigo-50 px-8 py-3.5 rounded-xl font-semibold text-[15px] transition-all flex items-center gap-2" onClick={() => navigate('/kids')} data-tooltip="Bolalar uchun maxsus rejim">
-              Kids Mode <SmileIcon />
+            <button className="text-neutral-500 hover:text-indigo-600 hover:bg-indigo-50 px-8 py-3.5 rounded-xl font-semibold text-[15px] transition-all flex items-center gap-2" onClick={() => navigate('/kids')} data-tooltip={t('kids_mode_tooltip')}>
+              {t('kids_mode_cta')} <Smile size={18} />
             </button>
           </div>
         </div>
@@ -169,7 +169,7 @@ const LandingPage = () => {
           {STATS.map((s, i) => (
             <div key={i} className="space-y-2">
                <div className="text-4xl font-bold tracking-tight text-neutral-900">{s.value}</div>
-               <div className="text-xs font-bold uppercase tracking-widest text-neutral-400">{s.label}</div>
+               <div className="text-xs font-bold uppercase tracking-widest text-neutral-400">{t(s.labelKey)}</div>
             </div>
           ))}
         </div>
@@ -179,19 +179,19 @@ const LandingPage = () => {
       <section className="py-40 px-6 bg-[#fcfcfc]" id="features">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-32 space-y-4">
-             <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-400">Features</div>
-             <h2 className="text-4xl lg:text-5xl font-bold tracking-tight text-neutral-900 heading-premium">Engineered for depth.</h2>
-             <p className="text-neutral-500 max-w-xl mx-auto font-medium leading-relaxed">High-performance tools that help you master complex subjects without the distraction.</p>
+             <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-400">{t('features')}</div>
+             <h2 className="text-4xl lg:text-5xl font-bold tracking-tight text-neutral-900 heading-premium">{t('features_title')}</h2>
+             <p className="text-neutral-500 max-w-xl mx-auto font-medium leading-relaxed">{t('features_description')}</p>
           </div>
 
           <div className="features-grid grid grid-cols-1 md:grid-cols-3 gap-16">
             {FEATURES.map((f, i) => (
               <div key={i} className="feature-item space-y-6 content-card p-8 border-none bg-white/60">
                 <div className="w-10 h-10 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">{f.icon}</div>
-                <h3 className="text-lg font-bold text-neutral-900">{f.title}</h3>
-                <p className="text-[14px] text-neutral-500 leading-relaxed font-medium">{f.desc}</p>
+                <h3 className="text-lg font-bold text-neutral-900">{t(f.titleKey)}</h3>
+                <p className="text-[14px] text-neutral-500 leading-relaxed font-medium">{t(f.descKey)}</p>
                 <div className="pt-2">
-                   <button className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 hover:text-black transition-colors flex items-center gap-1.5">Learn more <ChevronRight size={14} /></button>
+                   <button className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 hover:text-black transition-colors flex items-center gap-1.5">{t('learn_more')} <ChevronRight size={14} /></button>
                 </div>
               </div>
             ))}
@@ -203,12 +203,12 @@ const LandingPage = () => {
       <section className="py-40 px-6 border-t border-neutral-50">
          <div className="max-w-3xl mx-auto text-center space-y-12 bg-neutral-900 p-16 rounded-[40px] text-white shadow-2xl relative overflow-hidden glass-panel !bg-slate-900/90 !border-slate-800">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.2),_transparent)]"></div>
-            <h2 className="text-4xl font-bold tracking-tight relative z-10">Start your smart learning <br/> journey today.</h2>
+            <h2 className="text-4xl font-bold tracking-tight relative z-10">{t('cta_title')}</h2>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center relative z-10">
-               <button className="btn-glow bg-white text-black px-10 py-3.5 rounded-xl font-bold shadow-xl hover:scale-105 transition-all" onClick={goToLogin}>Get Started</button>
-               <button className="text-neutral-400 hover:text-white transition-colors font-semibold" onClick={() => navigate('/login')}>Sign in</button>
+               <button className="btn-glow bg-white text-black px-10 py-3.5 rounded-xl font-bold shadow-xl hover:scale-105 transition-all" onClick={goToLogin}>{t('start_for_free')}</button>
+               <button className="text-neutral-400 hover:text-white transition-colors font-semibold" onClick={() => navigate('/login')}>{t('sign_in')}</button>
             </div>
-            <div className="text-[10px] text-neutral-500 font-medium relative z-10 tracking-[0.1em] uppercase">No credit card required. Free tier available.</div>
+            <div className="text-[10px] text-neutral-500 font-medium relative z-10 tracking-[0.1em] uppercase">{t('no_credit_card')}</div>
          </div>
       </section>
 
@@ -224,34 +224,34 @@ const LandingPage = () => {
            </div>
            <div className="grid grid-cols-2 sm:grid-cols-3 gap-16">
               <div className="space-y-4">
-                 <div className="text-[11px] font-bold uppercase tracking-widest text-neutral-900">Product</div>
+                 <div className="text-[11px] font-bold uppercase tracking-widest text-neutral-900">{t('footer_product')}</div>
                  <div className="flex flex-col gap-2 text-[13px] font-medium text-neutral-500">
-                    <a href="#" className="hover:text-black transition-colors">Features</a>
-                    <a href="#" className="hover:text-black transition-colors">AI Mentor</a>
-                    <a href="#" className="hover:text-black transition-colors">Math Center</a>
+                    <a href="#" className="hover:text-black transition-colors">{t('features')}</a>
+                    <a href="#" className="hover:text-black transition-colors">{t('footer_ai_mentor')}</a>
+                    <a href="#" className="hover:text-black transition-colors">{t('footer_math_center')}</a>
                  </div>
               </div>
               <div className="space-y-4">
-                 <div className="text-[11px] font-bold uppercase tracking-widest text-neutral-900">Company</div>
+                 <div className="text-[11px] font-bold uppercase tracking-widest text-neutral-900">{t('footer_company')}</div>
                  <div className="flex flex-col gap-2 text-[13px] font-medium text-neutral-500">
-                    <a href="#" className="hover:text-black transition-colors">About</a>
-                    <a href="#" className="hover:text-black transition-colors">Privacy</a>
-                    <a href="#" className="hover:text-black transition-colors">Terms</a>
+                    <a href="#" className="hover:text-black transition-colors">{t('footer_about')}</a>
+                    <a href="#" className="hover:text-black transition-colors">{t('footer_privacy')}</a>
+                    <a href="#" className="hover:text-black transition-colors">{t('footer_terms')}</a>
                  </div>
               </div>
               <div className="space-y-4 hidden sm:block">
-                 <div className="text-[11px] font-bold uppercase tracking-widest text-neutral-900">Connect</div>
+                 <div className="text-[11px] font-bold uppercase tracking-widest text-neutral-900">{t('footer_connect')}</div>
                  <div className="flex flex-col gap-2 text-[13px] font-medium text-neutral-500">
-                    <a href="#" className="hover:text-black transition-colors">Twitter</a>
-                    <a href="#" className="hover:text-black transition-colors">GitHub</a>
+                    <a href="#" className="hover:text-black transition-colors">{t('footer_twitter')}</a>
+                    <a href="#" className="hover:text-black transition-colors">{t('footer_github')}</a>
                  </div>
               </div>
            </div>
         </div>
         <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-neutral-50 text-[11px] font-bold text-neutral-400 uppercase tracking-widest flex justify-between">
-           <span>© 2026 Typer AI. All rights reserved.</span>
+           <span>{t('footer_rights')}</span>
            <div className="flex gap-4">
-              <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div> All systems operational</div>
+              <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div> {t('footer_operational')}</div>
            </div>
         </div>
       </footer>
@@ -259,9 +259,5 @@ const LandingPage = () => {
     </div>
   );
 }
-
-const SmileIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-);
 
 export default LandingPage;

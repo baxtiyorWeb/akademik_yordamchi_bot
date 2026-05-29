@@ -4,7 +4,8 @@ import {
   Plus, Mic, ArrowUp, Image as ImageIcon, Copy,
   Bookmark, Share2, Terminal, Download, FileText, Paperclip, X, Sparkles,
   Play, Check, ChevronRight, Eye, Info, AlertCircle, Save, Database, Layers,
-  BookOpen, Bot, Send, Calendar, Presentation, Moon, Sun, Palette
+  BookOpen, Bot, Send, Calendar, Presentation, Moon, Sun, Palette,
+  Star
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -19,6 +20,8 @@ import { toast, Toaster } from 'sonner';
 // Hooks
 import { useMessages } from '../hooks/useMessages';
 import { useNotebook } from '../hooks/useNotebook';
+import TutorAssignments from './TutorAssignments';
+import TutorWidgets from './TutorWidgets';
 
 mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose', fontFamily: 'Inter, sans-serif' });
 
@@ -95,32 +98,43 @@ const SmartNoteLM = React.memo(({ title, content, onSave }) => {
 });
 
 const safeParseJSON = (str) => {
+  if (typeof str !== 'string') return null;
   let clean = str.trim();
-  
+
+  if (!clean.startsWith('{') && !clean.startsWith('[')) {
+    return null;
+  }
+  if (clean.startsWith('[') && !/^\[\s*(?:\{|\[|"|\-|\d|true|false|null)/i.test(clean)) {
+    return null;
+  }
+  if (clean.startsWith('{') && !/^\{\s*"/.test(clean)) {
+    return null;
+  }
+
   // 1. Try raw parse first
   try {
     return JSON.parse(clean);
-  } catch (e) {}
-  
+  } catch (e) { }
+
   // 2. Fix raw newlines in string literals
   try {
     const fixedNewlines = clean.replace(/"([^"]*)"/g, (match, p1) => {
       return '"' + p1.replace(/\n/g, '\\n').replace(/\r/g, '\\r') + '"';
     });
     return JSON.parse(fixedNewlines);
-  } catch (e) {}
-  
+  } catch (e) { }
+
   // 3. Repair incomplete JSON structures (auto-closing brackets and quotes)
   try {
     let stack = [];
     let inString = false;
     let escaped = false;
     let cleanStr = "";
-    
+
     for (let i = 0; i < clean.length; i++) {
       let char = clean[i];
       cleanStr += char;
-      
+
       if (inString) {
         if (escaped) {
           escaped = false;
@@ -142,16 +156,16 @@ const safeParseJSON = (str) => {
         }
       }
     }
-    
+
     if (inString) {
       cleanStr += '"';
     }
-    
+
     cleanStr = cleanStr.trim();
     if (cleanStr.endsWith(',')) {
       cleanStr = cleanStr.substring(0, cleanStr.length - 1);
     }
-    
+
     while (stack.length > 0) {
       let last = stack.pop();
       if (last === '[') {
@@ -160,15 +174,32 @@ const safeParseJSON = (str) => {
         cleanStr += '}';
       }
     }
-    
+
     // Strip trailing commas before closing brackets/braces
     cleanStr = cleanStr.replace(/,\s*([\]}])/g, '$1');
-    
+
     return JSON.parse(cleanStr);
   } catch (e) {
     console.error("Failed to parse JSON even after repair attempts:", e);
     return null;
   }
+};
+
+const formatTutorBlocks = (text) => {
+  if (!text || typeof text !== 'string') return text;
+  return text
+    .replace(/^:::task\s*/gim, '\n\n**🏠 Uy vazifasi:**\n\n')
+    .replace(/^:::step\s*/gim, '\n\n### Bosqich:\n\n')
+    .replace(/^:::note\s*/gim, '\n\n**📝 Qayd:**\n\n')
+    .replace(/^:::solution\s*/gim, '\n\n**✅ Yechim:**\n\n')
+    .replace(/^:::summary\s*/gim, '\n\n**📌 Xulosa:**\n\n')
+    .replace(/^:::xulosa\s*/gim, '\n\n**📌 Xulosa:**\n\n')
+    .replace(/:::rating\s*Today Rating:\s*([^\n]+?)(?:\s+Izoh:\s*([\s\S]*?))?(?=\n|$)/gi, (_match, score, note) => {
+      let result = `\n\n> **⭐ Kunlik reyting:** ${score.trim()}\n`;
+      if (note) result += `> ${note.trim()}\n`;
+      return result + '\n';
+    })
+    .replace(/\[daily study time\]:\s*([^\n]+)/gi, '**⏱️ Daily study time:** $1\n\n');
 };
 
 // ─── BOT MESSAGE ─────────────────────────────────────────────────────
@@ -187,24 +218,53 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages }) => {
 
   const slideDeckData = useMemo(() => {
     try {
-      let cleanText = content.replace(/\[EXPORT_FILE:[\s\S]*?\]/gi, '');
-      cleanText = cleanText.replace(/\[SLIDE_THEME:[\s\S]*?\]/gi, '');
-      cleanText = cleanText.replace(/```json/g, '').replace(/```/g, '').trim();
+      const exportClean = content.replace(/\[EXPORT_FILE:[\s\S]*?\]/gi, '').replace(/\[SLIDE_THEME:[\s\S]*?\]/gi, '').trim();
+      const jsonBlockMatch = exportClean.match(/```json\s*([\s\S]*?)\s*```/i);
+      let jsonStr = jsonBlockMatch ? jsonBlockMatch[1].trim() : null;
 
-      const startIdx = cleanText.indexOf('[');
-      const endIdx = cleanText.lastIndexOf(']');
-      if (startIdx !== -1 && endIdx !== -1 && startIdx < endIdx) {
-        const jsonStr = cleanText.substring(startIdx, endIdx + 1);
-        const parsed = safeParseJSON(jsonStr);
-        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].layout) {
-          const themeMatch = content.match(/\[SLIDE_THEME:\s*([a-zA-Z0-9_\-]+?)\]/i) || 
-                             (messages && messages.find(msg => msg.role === 'user' && msg.content.includes('[SLIDE_THEME:'))?.content?.match(/\[SLIDE_THEME:\s*([a-zA-Z0-9_\-]+?)\]/i));
-          const theme = themeMatch ? themeMatch[1] : 'dark';
-          return {
-            slides: parsed,
-            theme: theme
-          };
+      if (!jsonStr) {
+        const start = exportClean.indexOf('[');
+        if (start >= 0) {
+          let depth = 0;
+          let inString = false;
+          let escaped = false;
+          for (let i = start; i < exportClean.length; i++) {
+            const ch = exportClean[i];
+            if (inString) {
+              if (escaped) {
+                escaped = false;
+              } else if (ch === '\\') {
+                escaped = true;
+              } else if (ch === '"') {
+                inString = false;
+              }
+            } else {
+              if (ch === '"') {
+                inString = true;
+              } else if (ch === '[') {
+                depth += 1;
+              } else if (ch === ']') {
+                depth -= 1;
+                if (depth === 0) {
+                  jsonStr = exportClean.slice(start, i + 1).trim();
+                  break;
+                }
+              }
+            }
+          }
         }
+      }
+
+      if (!jsonStr) return null;
+      const parsed = safeParseJSON(jsonStr);
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].layout) {
+        const themeMatch = content.match(/\[SLIDE_THEME:\s*([a-zA-Z0-9_\-]+?)\]/i) ||
+          (messages && messages.find(msg => msg.role === 'user' && msg.content.includes('[SLIDE_THEME:'))?.content?.match(/\[SLIDE_THEME:\s*([a-zA-Z0-9_\-]+?)\]/i));
+        const theme = themeMatch ? themeMatch[1] : 'dark';
+        return {
+          slides: parsed,
+          theme: theme
+        };
       }
     } catch (e) {
       console.error("slideDeckData parse error:", e);
@@ -213,10 +273,10 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages }) => {
     return null;
   }, [content, messages]);
 
-  const { mainBody, noteData, steps, solution, exportData } = useMemo(() => {
+  const { mainBody, noteData, summaryText, steps, solution, exportData } = useMemo(() => {
     try {
       if (isStreaming) {
-        return { mainBody: processedContent, noteData: null, steps: [], solution: null, exportData: null };
+        return { mainBody: processedContent, noteData: null, summaryText: null, steps: [], solution: null, exportData: null };
       }
 
       let workingContent = processedContent;
@@ -228,10 +288,10 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages }) => {
 
       if (exportMatch) {
         workingContent = workingContent.replace(exportRegex, '').trim();
-        exportInfo = { 
-          type: exportMatch[1].toUpperCase(), 
-          title: exportMatch[2].trim(), 
-          content: exportMatch[3].trim() 
+        exportInfo = {
+          type: exportMatch[1].toUpperCase(),
+          title: exportMatch[2].trim(),
+          content: exportMatch[3].trim()
         };
       } else {
         const filenameRegex = /\[EXPORT_FILE:\s*([^\|\]]+?)\]/i;
@@ -241,44 +301,73 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages }) => {
           const filename = filenameMatch[1].trim();
           const parts = filename.split('.');
           const ext = parts[parts.length - 1].toUpperCase();
-          exportInfo = { 
-            type: ext, 
-            title: filename, 
+          exportInfo = {
+            type: ext,
+            title: filename,
             content: workingContent
           };
         }
       }
 
-      const noteParts = workingContent.split(':::note');
-      let m = noteParts[0]; let n = null;
-      if (noteParts.length > 1) {
-        const lines = noteParts[1].trim().split('\n');
+      let noteMatch = workingContent.match(/:::note\s*([\s\S]*?)(?=:::(summary|xulosa|step|solution)|$)/i);
+      let noteData = null;
+      if (noteMatch) {
+        const noteText = noteMatch[1].trim();
+        const lines = noteText.split('\n');
         const title = (lines[0] || 'Qayd').replace(/[\[\]]/g, '').trim();
-        const content = lines.slice(1).join('\n').split(':::')[0].trim();
-        if (content) n = { title, content };
-        m = m + (noteParts[1].split(':::')[1] || '');
+        const content = lines.slice(1).join('\n').trim();
+        if (content) noteData = { title, content };
+        workingContent = workingContent.replace(noteMatch[0], '').trim();
       }
-      const solParts = m.split(':::solution');
-      const mSteps = solParts[0].split(':::step');
+
+      const summaryMatch = workingContent.match(/:::(?:summary|xulosa)\s*([\s\S]*?)(?=:::(step|solution)|$)/i);
+      const summaryTextRaw = summaryMatch ? summaryMatch[1].trim() : null;
+      if (summaryMatch) {
+        workingContent = workingContent.replace(summaryMatch[0], '').trim();
+      }
+
+      const solutionMatch = workingContent.match(/:::solution\s*([\s\S]*?)$/i);
+      const solutionTextRaw = solutionMatch ? solutionMatch[1].trim() : null;
+      if (solutionMatch) {
+        workingContent = workingContent.replace(solutionMatch[0], '').trim();
+      }
+
+      const stepMatches = [];
+      const stepRegex = /:::step\s*([\s\S]*?)(?=:::(step|solution)|$)/gi;
+      let stepMatch;
+      while ((stepMatch = stepRegex.exec(workingContent))) {
+        if (stepMatch[1]?.trim()) {
+          stepMatches.push(stepMatch[1].trim());
+        }
+      }
+      workingContent = workingContent.replace(/:::step[\s\S]*/gi, '').trim();
 
       if (exportInfo && exportInfo.content === workingContent) {
-        // Clean exported content of tags
         exportInfo.content = workingContent
           .replace(/:::note[\s\S]*?:::/g, '')
           .replace(/:::step/g, '')
           .replace(/:::solution/g, '')
+          .replace(/:::(summary|xulosa)[\s\S]*?$/gi, '')
           .trim();
       }
 
+      const formattedMain = formatTutorBlocks(workingContent);
+      const formattedNote = noteData ? { ...noteData, content: formatTutorBlocks(noteData.content) } : null;
+      const formattedSummary = summaryTextRaw ? formatTutorBlocks(summaryTextRaw) : null;
+      const formattedSteps = stepMatches.filter(s => s.trim() !== '').map(s => formatTutorBlocks(s));
+      const formattedSolution = solutionTextRaw ? formatTutorBlocks(solutionTextRaw) : null;
+      const formattedExport = exportInfo ? { ...exportInfo, content: formatTutorBlocks(exportInfo.content) } : exportInfo;
+
       return {
-        mainBody: mSteps[0],
-        noteData: n,
-        steps: mSteps.slice(1).filter(s => s.trim() !== ''),
-        solution: solParts[1] ? solParts[1].trim() : null,
-        exportData: exportInfo
+        mainBody: formattedMain,
+        noteData: formattedNote,
+        summaryText: formattedSummary,
+        steps: formattedSteps,
+        solution: formattedSolution,
+        exportData: formattedExport
       };
     } catch (e) {
-      return { mainBody: processedContent, noteData: null, steps: [], solution: null, exportData: null };
+      return { mainBody: processedContent, noteData: null, summaryText: null, steps: [], solution: null, exportData: null };
     }
   }, [processedContent, isStreaming]);
 
@@ -286,7 +375,7 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages }) => {
     if (e && e.stopPropagation) {
       e.stopPropagation();
     }
-    
+
     // Check if we are exporting slides from the slide deck card
     if (slidesParam || (Array.isArray(e) && e.length > 0 && e[0].layout)) {
       const slides = slidesParam || e;
@@ -294,11 +383,11 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages }) => {
       const firstSlide = slides[0] || { title: "Taqdimot" };
       const fileName = `${(firstSlide.title || "Taqdimot").toLowerCase().replace(/\s+/g, '_')}.pptx`;
       const loadingId = toast.loading("Taqdimot tayyorlanmoqda...");
-      
+
       try {
         const PptxGenJS = (await import('pptxgenjs')).default;
         const pptx = new PptxGenJS();
-        
+
         // Define colors based on theme
         const themes = {
           dark: { bg: "0B0F19", text: "FFFFFF", accent: "6366F1", cardBg: "1E293B", cardBorder: "334155" },
@@ -306,13 +395,13 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages }) => {
           purple: { bg: "F5F3FF", text: "2E1065", accent: "7C3AED", cardBg: "FFFFFF", cardBorder: "DDD6FE" },
           tech: { bg: "000000", text: "FFFFFF", accent: "10B981", cardBg: "111827", cardBorder: "1F2937" }
         };
-        
+
         const style = themes[theme] || themes.dark;
-        
+
         slides.forEach((slideData) => {
           const slide = pptx.addSlide();
           slide.background = { fill: style.bg };
-          
+
           // Add slide title if it's not a title layout
           if (slideData.layout !== 'title' && slideData.title) {
             slide.addText(slideData.title, {
@@ -320,7 +409,7 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages }) => {
               fontSize: 22, bold: true, color: style.accent
             });
           }
-          
+
           if (slideData.layout === 'title') {
             // Main title slide
             slide.addText(slideData.title || "Taqdimot", {
@@ -345,7 +434,7 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages }) => {
               x: 0.5, y: 1.8, w: '43%', h: 3.5,
               fontSize: 14, color: style.text, align: 'left', valign: 'top'
             });
-            
+
             // Right Column
             const right = slideData.rightColumn || { points: [] };
             let rightY = 1.2;
@@ -365,7 +454,7 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages }) => {
             const cardH = 3.5;
             const gap = 0.3;
             let startX = 0.5;
-            
+
             cards.slice(0, 3).forEach((card) => {
               // Draw background shape for card
               slide.addShape(pptx.shapes.RECTANGLE, {
@@ -373,17 +462,17 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages }) => {
                 fill: { color: style.cardBg },
                 line: { color: style.cardBorder, width: 1 }
               });
-              
+
               slide.addText(card.title || "", {
                 x: startX + 0.15, y: 1.7, w: cardW - 0.3, h: 0.5,
                 fontSize: 16, bold: true, color: style.accent
               });
-              
+
               slide.addText(card.desc || "", {
                 x: startX + 0.15, y: 2.3, w: cardW - 0.3, h: cardH - 1.0,
                 fontSize: 12, color: style.text, align: 'left', valign: 'top'
               });
-              
+
               startX += cardW + gap;
             });
           } else if (slideData.layout === 'quote') {
@@ -411,7 +500,7 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages }) => {
             });
           }
         });
-        
+
         await pptx.writeFile({ fileName });
         toast.success('Taqdimot yuklab olindi!', { id: loadingId });
       } catch (err) {
@@ -534,7 +623,7 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages }) => {
               <p className={`text-xs ${currentStyle.subColor} font-medium mt-1 uppercase tracking-wider`}>{slides.length} slayd • Theme: {theme.toUpperCase()}</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={() => handleExport(null, slideDeckData.slides, slideDeckData.theme)}
             className={`${currentStyle.btnBg} text-white text-[12px] font-bold px-6 py-3 rounded-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2 flex-shrink-0 shadow-lg`}
           >
@@ -546,8 +635,8 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages }) => {
           <span className={`text-[10px] font-black uppercase tracking-widest ${currentStyle.subColor}`}>Slaydlar taqdimoti preview</span>
           <div className="flex overflow-x-auto gap-4 py-2 custom-scrollbar pr-4">
             {slides.map((slide, sIdx) => (
-              <div 
-                key={sIdx} 
+              <div
+                key={sIdx}
                 className={`${currentStyle.slideBg} w-[180px] h-[110px] flex-shrink-0 rounded-xl p-3 border ${currentStyle.border} shadow-sm relative overflow-hidden flex flex-col justify-between`}
               >
                 <div className="absolute inset-x-3 bottom-3 flex flex-col gap-1.5 opacity-40">
@@ -627,6 +716,25 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages }) => {
           components={markdownComponents}
         >{mainBody}</ReactMarkdown>
         {noteData && <SmartNoteLM title={noteData.title} content={noteData.content} onSave={onSave} />}
+        {summaryText && (
+          <div className="my-6 p-5 bg-slate-50 border border-slate-200 rounded-3xl">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-400 font-semibold">Xulosa</p>
+                <h4 className="text-sm font-semibold text-slate-900">Muhim qismlar</h4>
+              </div>
+              {onSave && (
+                <button
+                  onClick={() => onSave([mainBody, summaryText, solution].filter(Boolean).join('\n\n'))}
+                  className="px-3 py-2 rounded-xl bg-indigo-600 text-white text-[12px] font-semibold hover:bg-indigo-700 transition-all"
+                >
+                  Saqlash
+                </button>
+              )}
+            </div>
+            <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{summaryText}</ReactMarkdown>
+          </div>
+        )}
         {steps.slice(0, unlockedSteps).map((s, i) => (
           <div key={i} className="my-8 border-l-2 border-indigo-100 pl-6 animate-in slide-in-from-left-4 duration-700">
             <div className="flex items-center gap-3 mb-3">
@@ -661,6 +769,8 @@ const TutorChat = ({ session }) => {
   const { messages, isSending, sendMessage, chatSessions, activeSessionId, changeSession } = useMessages(session);
   const { saveEntry } = useNotebook(session);
   const [mode, setMode] = useState('TUTOR');
+  const [showAssignments, setShowAssignments] = useState(false);
+  const [todayMinutes, setTodayMinutes] = useState(0);
   const [slideWizard, setSlideWizard] = useState(null);
   const [wizardFile, setWizardFile] = useState(null);
   const wizardFileRef = useRef(null);
@@ -668,6 +778,15 @@ const TutorChat = ({ session }) => {
   const messagesEndRef = useRef(null);
   const scrollToBottom = useCallback(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), []);
   useEffect(() => { const t = setTimeout(scrollToBottom, 50); return () => clearTimeout(t); }, [messages.length, isSending, scrollToBottom]);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const t = await getStudyTime({ userId: session?.user?.id });
+        setTodayMinutes(t.minutes || 0);
+      } catch (e) { }
+    };
+    load();
+  }, [session]);
 
   const handleSave = useCallback((t) => saveEntry(t), [saveEntry]);
 
@@ -686,25 +805,75 @@ const TutorChat = ({ session }) => {
     }
   };
 
+  const openSlideWizard = () => {
+    setSlideWizard({
+      topic: '',
+      slidesCount: 10,
+      resourceText: '',
+      resourceOption: 'none',
+      theme: 'dark'
+    });
+  };
+
   return (
-    <div className="flex-1 flex h-full bg-[#f8faff] nano-bg relative overflow-hidden w-full flex-col md:flex-row">
+    <div className="flex-1 flex h-full bg-[#f8faff] nano-bg relative overflow-hidden w-full flex-col lg:flex-row">
       {/* LEFT: MAIN CHAT */}
       <div className="flex-1 flex flex-col h-full relative min-w-0">
         <IconGradient />
         <Toaster position="top-right" richColors />
 
         {/* HEADER / ACTIONS */}
-        <div className="relative md:absolute top-0 md:top-4 left-0 right-0 md:right-6 z-30 flex flex-row items-center justify-between md:justify-end gap-2 p-4 md:p-0 border-b border-slate-100 md:border-none bg-white md:bg-transparent w-full md:w-auto shrink-0 animate-in slide-in-from-top-3 duration-300">
-          <div className="bg-slate-50 md:bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-xl p-0.5 md:p-1 flex items-center shadow-sm w-fit">
-            <button onClick={() => setMode('TUTOR')} className={`px-3 md:px-4 py-1.5 rounded-lg text-[11px] md:text-[12px] font-semibold transition-all ${mode === 'TUTOR' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}>Tutor</button>
-            <button onClick={() => setMode('CODER')} className={`px-3 md:px-4 py-1.5 rounded-lg text-[11px] md:text-[12px] font-semibold transition-all ${mode === 'CODER' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}>Coder</button>
-            <button onClick={() => setMode('KIDS')} className={`px-3 md:px-4 py-1.5 rounded-lg text-[11px] md:text-[12px] font-semibold transition-all ${mode === 'KIDS' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}>Kids</button>
+        <div className="absolute bg-white/70 dark:bg-slate-900/40 h-13 backdrop-blur-2xl float-right max-w-max md:absolute top-0 md:top-4 right-0 md:right-6 z-30 flex flex-row items-center justify-between md:justify-end gap-2 p-4 md:p-3 border-b border-slate-200/60 md:border md:border-white/40 md:rounded-2xl w-full md:w-auto shrink-0 animate-in slide-in-from-top-3 duration-300 shadow-[0_8px_32px_0_rgba(0,0,0,0.08)]">
+
+          {/* Switcher Container */}
+          <div className="bg-slate-100/80 dark:bg-slate-800/40 px-2 backdrop-blur-md border border-slate-200/50 dark:border-white/10 rounded-xl p-0.5 md:p-1 flex items-center shadow-inner w-fit">
+            <button
+              onClick={() => setMode('TUTOR')}
+              className={`px-3 md:px-4 py-1.5 rounded-lg text-[11px] md:text-[12px] font-semibold transition-all ${mode === 'TUTOR'
+                  ? 'bg-slate-950 text-white shadow-md'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                }`}
+            >
+              Tutor
+            </button>
+            <button
+              onClick={() => setMode('KIDS')}
+              className={`px-3 md:px-4 py-1.5 rounded-lg text-[11px] md:text-[12px] font-semibold transition-all ${mode === 'KIDS'
+                  ? 'bg-slate-950 text-white shadow-md'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                }`}
+            >
+              Kids
+            </button>
           </div>
-          <button onClick={() => changeSession(null)} className="flex items-center gap-1.5 px-3 md:px-4 py-2 bg-indigo-600 border border-indigo-500 rounded-xl text-[11px] md:text-[13px] font-semibold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all">
+
+          {/* Assignments Section */}
+          <div className="hidden md:flex items-center gap-3 ml-3">
+            <button
+              onClick={openSlideWizard}
+              className="px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-slate-200 bg-white/60 text-slate-800 hover:bg-white/90 hover:border-slate-300 backdrop-blur-sm transition-all shadow-sm"
+            >
+              Slayd Tayyorlash
+            </button>
+            <button
+              onClick={() => setShowAssignments(v => !v)}
+              className="px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-slate-200 bg-white/60 text-slate-800 hover:bg-white/90 hover:border-slate-300 backdrop-blur-sm transition-all shadow-sm"
+            >
+              Assignments
+            </button>
+            <div className="text-[12px] text-slate-600 font-medium">
+              Today: <span className="font-bold text-slate-900">{todayMinutes}m</span>
+            </div>
+          </div>
+
+          {/* Yangi Chat Button */}
+          <button
+            onClick={() => changeSession(null)}
+            className="flex items-center gap-1.5 px-3 md:px-4 py-2 bg-indigo-600 border border-indigo-500/30 rounded-xl text-[11px] md:text-[13px] font-semibold text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 transition-all"
+          >
             <Plus size={14} /> Yangi Chat
           </button>
         </div>
-
         <div className="flex-1 overflow-y-auto pt-2 md:pt-16 pb-36 md:pb-40 px-0 md:px-6 custom-scrollbar relative z-10">
           {messages.length === 0 ? (
             <div className="max-w-4xl mx-auto flex flex-col items-center justify-center min-h-[60vh] md:min-h-[70vh] gap-6 md:gap-8 animate-in fade-in duration-1000">
@@ -757,12 +926,50 @@ const TutorChat = ({ session }) => {
         </div>
       </div>
 
+      {/* RIGHT: TUTOR SIDEBAR */}
+      <aside className="w-full lg:w-[380px] flex-shrink-0 border-t border-slate-200/60 lg:border-t-0 lg:border-l lg:bg-slate-50/90 lg:backdrop-blur-xl lg:shadow-inner lg:shadow-slate-200/5">
+        <div className="sticky top-0 z-30 bg-slate-50/95 lg:bg-transparent border-b border-slate-200/60 lg:border-none px-4 py-4 lg:px-6 lg:pt-6">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.32em] font-semibold text-slate-400">Tutor Panel</p>
+              <h2 className="text-lg font-bold text-slate-900">Monitoring</h2>
+            </div>
+            <button onClick={() => setShowAssignments(v => !v)} className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-2 text-[13px] font-semibold text-indigo-700 hover:bg-indigo-100 transition-all">
+              {showAssignments ? 'Hide Tasks' : 'Show Tasks'}
+            </button>
+          </div>
+        </div>
+
+        <div className="p-4 lg:p-6 space-y-4">
+          <TutorWidgets session={session} />
+          {showAssignments ? (
+            <TutorAssignments session={session} onClose={() => setShowAssignments(false)} />
+          ) : (
+            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="mt-1 h-10 w-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-sm">
+                  <Star size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">Assignments</h3>
+                  <p className="mt-1 text-sm text-slate-500">Tapshiriqlarni boshqarish uchun oching va har kunlik reytingni qidiring.</p>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-col gap-3">
+                <div className="rounded-2xl bg-slate-50 p-3 text-sm text-slate-600 border border-slate-200">Today: <span className="font-semibold text-slate-900">{todayMinutes}m</span></div>
+                <div className="rounded-2xl bg-slate-50 p-3 text-sm text-slate-600 border border-slate-200">Open the tasks panel to review progress and add more homework.</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </aside>
+
       {/* SLIDE GENERATOR WIZARD MODAL */}
       {slideWizard && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-[32px] border border-slate-100 shadow-2xl w-full max-w-lg p-6 md:p-8 flex flex-col gap-6 relative animate-in zoom-in-95 duration-300">
-            <button 
-              onClick={() => { setSlideWizard(null); setWizardFile(null); }} 
+            <button
+              onClick={() => { setSlideWizard(null); setWizardFile(null); }}
               className="absolute top-6 right-6 p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-all"
             >
               <X size={18} />
@@ -781,8 +988,8 @@ const TutorChat = ({ session }) => {
             <div className="space-y-4 text-left">
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-slate-400 uppercase tracking-widest">Taqdimot Mavzusi</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={slideWizard.topic}
                   onChange={e => setSlideWizard(prev => ({ ...prev, topic: e.target.value }))}
                   className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-[14px] outline-none text-slate-700 focus:bg-slate-100 transition-all font-medium"
@@ -792,8 +999,8 @@ const TutorChat = ({ session }) => {
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-slate-400 uppercase tracking-widest">Slaydlar Soni (Kamida 10 ta)</label>
                 <div className="flex items-center gap-3">
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     min={10}
                     value={slideWizard.slidesCount}
                     onChange={e => setSlideWizard(prev => ({ ...prev, slidesCount: Math.max(10, parseInt(e.target.value) || 10) }))}
@@ -806,19 +1013,19 @@ const TutorChat = ({ session }) => {
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-slate-400 uppercase tracking-widest">Mavzu bo'yicha manba bormi?</label>
                 <div className="grid grid-cols-3 gap-2">
-                  <button 
+                  <button
                     onClick={() => setSlideWizard(prev => ({ ...prev, resourceOption: 'none' }))}
                     className={`py-2 px-3 rounded-xl text-[11px] font-medium border transition-all ${slideWizard.resourceOption === 'none' ? 'bg-slate-900 border-slate-900 text-white shadow-md' : 'bg-slate-50 border-transparent text-slate-500 hover:bg-slate-100'}`}
                   >
                     Yo'q (O'tkazib yuborish)
                   </button>
-                  <button 
+                  <button
                     onClick={() => setSlideWizard(prev => ({ ...prev, resourceOption: 'text' }))}
                     className={`py-2 px-3 rounded-xl text-[11px] font-medium border transition-all ${slideWizard.resourceOption === 'text' ? 'bg-slate-900 border-slate-900 text-white shadow-md' : 'bg-slate-50 border-transparent text-slate-500 hover:bg-slate-100'}`}
                   >
                     Matn Kiritish
                   </button>
-                  <button 
+                  <button
                     onClick={() => setSlideWizard(prev => ({ ...prev, resourceOption: 'file' }))}
                     className={`py-2 px-3 rounded-xl text-[11px] font-medium border transition-all ${slideWizard.resourceOption === 'file' ? 'bg-slate-900 border-slate-900 text-white shadow-md' : 'bg-slate-50 border-transparent text-slate-500 hover:bg-slate-100'}`}
                   >
@@ -829,7 +1036,7 @@ const TutorChat = ({ session }) => {
 
               {slideWizard.resourceOption === 'text' && (
                 <div className="space-y-1.5 animate-in slide-in-from-top-2 duration-200">
-                  <textarea 
+                  <textarea
                     placeholder="Slayd tuzishda ishlatiladigan kitob yoki maqola matnini shu yerga joylashtiring..."
                     value={slideWizard.resourceText}
                     onChange={e => setSlideWizard(prev => ({ ...prev, resourceText: e.target.value }))}
@@ -841,14 +1048,14 @@ const TutorChat = ({ session }) => {
 
               {slideWizard.resourceOption === 'file' && (
                 <div className="space-y-3 animate-in slide-in-from-top-2 duration-200">
-                  <div 
+                  <div
                     onClick={() => wizardFileRef.current?.click()}
                     className="p-6 border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/20 rounded-2xl bg-slate-50 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 group"
                   >
-                    <input 
-                      type="file" 
-                      ref={wizardFileRef} 
-                      className="hidden" 
+                    <input
+                      type="file"
+                      ref={wizardFileRef}
+                      className="hidden"
                       accept="image/*,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                       onChange={e => {
                         const f = e.target.files[0];
@@ -866,7 +1073,7 @@ const TutorChat = ({ session }) => {
                       <span className="text-[10px] text-slate-400 mt-1 block">PDF, Word, Rasm yoki Matn fayli (Max 10MB)</span>
                     </div>
                   </div>
-                  
+
                   {wizardFile && (
                     <div className="p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl flex items-center justify-between gap-3 animate-in fade-in duration-300">
                       <div className="flex items-center gap-2.5 min-w-0">
@@ -878,7 +1085,7 @@ const TutorChat = ({ session }) => {
                           <div className="text-[9px] text-indigo-600 font-medium uppercase tracking-wider mt-0.5">{(wizardFile.size / 1024 / 1024).toFixed(2)} MB</div>
                         </div>
                       </div>
-                      <button 
+                      <button
                         onClick={(e) => { e.stopPropagation(); setWizardFile(null); }}
                         className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                       >
@@ -886,8 +1093,8 @@ const TutorChat = ({ session }) => {
                       </button>
                     </div>
                   )}
-                  
-                  <textarea 
+
+                  <textarea
                     placeholder="Qisqa reja, mavzu haqida izoh yoki havola..."
                     value={slideWizard.resourceText}
                     onChange={e => setSlideWizard(prev => ({ ...prev, resourceText: e.target.value }))}
@@ -906,7 +1113,7 @@ const TutorChat = ({ session }) => {
                     { key: 'purple', icon: <Palette size={14} className="text-purple-500" />, label: 'Creative Violet', desc: 'Binafsha urg\'ulari va och fon' },
                     { key: 'tech', icon: <Terminal size={14} className="text-emerald-500" />, label: 'Minimalist Tech', desc: 'Yashil urg\'ulari va qora fon' }
                   ].map(theme => (
-                    <button 
+                    <button
                       key={theme.key}
                       onClick={() => setSlideWizard(prev => ({ ...prev, theme: theme.key }))}
                       className={`p-3 rounded-2xl border text-left transition-all ${slideWizard.theme === theme.key ? 'bg-indigo-50/50 border-indigo-200 shadow-sm' : 'bg-white border-slate-100 hover:bg-slate-50'}`}
@@ -922,7 +1129,7 @@ const TutorChat = ({ session }) => {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => {
                 const compiledPrompt = `
 Mavzu: ${slideWizard.topic}
@@ -1004,7 +1211,7 @@ MUHIM QOIDALAR:
             >
               Slayd Tayyorlash 🚀
             </button>
-            <button 
+            <button
               onClick={() => {
                 sendMessage({ userText: slideWizard.topic, attachment: wizardFile, mode, currentMessages: messages });
                 setSlideWizard(null);
