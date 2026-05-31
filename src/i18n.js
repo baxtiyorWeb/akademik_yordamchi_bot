@@ -29,7 +29,7 @@ const resources = {
       "powered_by": "Gemini 3.1 Flash-Lite bilan ishlaydi",
       "hero_heading_1": "Intellektual ish maydoni",
       "hero_heading_2": "akademik mukammallik uchun.",
-      "hero_subtitle": "Typer AI o‘quv, tadqiqot va muammolarni hal qilishni bir joyga jamlaydi.",
+      "hero_subtitle": "Ovvox Ai o‘quv, tadqiqot va muammolarni hal qilishni bir joyga jamlaydi.",
       "start_for_free": "Bepul boshlash",
       "kids_mode_cta": "Bolalar rejimi",
       "kids_mode_tooltip": "Bolalar uchun maxsus rejim",
@@ -48,6 +48,7 @@ const resources = {
       "dashboard": "Dashboard",
       "ai_assistant": "AI yordamchisi",
       "notebook_lm": "Notebook LM",
+      "ielts_prep": "IELTS",
       "lingo_voice": "Lingo Voice",
       "math_center": "Math Center",
       "plans": "Rejalar",
@@ -65,7 +66,7 @@ const resources = {
       "footer_twitter": "Twitter",
       "footer_github": "GitHub",
       "footer_operational": "Barcha tizimlar ishlamoqda",
-      "footer_rights": "© 2026 Typer AI. Barcha huquqlar himoyalangan."
+      "footer_rights": "© 2026 Ovvox Ai. Barcha huquqlar himoyalangan."
     }
   },
   ru: {
@@ -94,7 +95,7 @@ const resources = {
       "powered_by": "Работает на Gemini 3.1 Flash-Lite",
       "hero_heading_1": "Интеллектуальное рабочее пространство",
       "hero_heading_2": "для академического совершенства.",
-      "hero_subtitle": "Typer AI объединяет обучение, исследование и решение задач в одном месте.",
+      "hero_subtitle": "Ovvox Ai объединяет обучение, исследование и решение задач в одном месте.",
       "start_for_free": "Начать бесплатно",
       "kids_mode_cta": "Детский режим",
       "kids_mode_tooltip": "Специальный режим для детей",
@@ -113,6 +114,7 @@ const resources = {
       "dashboard": "Панель",
       "ai_assistant": "AI помощник",
       "notebook_lm": "Notebook LM",
+      "ielts_prep": "IELTS",
       "lingo_voice": "Lingo Voice",
       "math_center": "Math Center",
       "plans": "Тарифы",
@@ -130,7 +132,7 @@ const resources = {
       "footer_twitter": "Twitter",
       "footer_github": "GitHub",
       "footer_operational": "Все системы работают",
-      "footer_rights": "© 2026 Typer AI. Все права защищены."
+      "footer_rights": "© 2026 Ovvox Ai. Все права защищены."
     }
   },
   en: {
@@ -159,7 +161,7 @@ const resources = {
       "powered_by": "Powered by Gemini 3.1 Flash-Lite",
       "hero_heading_1": "The intelligent workspace",
       "hero_heading_2": "for academic excellence.",
-      "hero_subtitle": "Typer AI centralizes your learning, research, and problem-solving into a single, high-performance environment.",
+      "hero_subtitle": "Ovvox Ai centralizes your learning, research, and problem-solving into a single, high-performance environment.",
       "start_for_free": "Start for free",
       "kids_mode_cta": "Kids Mode",
       "kids_mode_tooltip": "Special mode for kids",
@@ -178,6 +180,7 @@ const resources = {
       "dashboard": "Dashboard",
       "ai_assistant": "AI Assistant",
       "notebook_lm": "Notebook LM",
+      "ielts_prep": "IELTS",
       "lingo_voice": "Lingo Voice",
       "math_center": "Math Center",
       "plans": "Plans",
@@ -195,7 +198,7 @@ const resources = {
       "footer_twitter": "Twitter",
       "footer_github": "GitHub",
       "footer_operational": "All systems operational",
-      "footer_rights": "© 2026 Typer AI. All rights reserved."
+      "footer_rights": "© 2026 Ovvox Ai. All rights reserved."
     }
   }
 };

@@ -11,6 +11,7 @@ import MathCenter from './components/MathCenter';
 import NotebookPage from './components/NotebookPage';
 import PricingPage from './components/PricingPage';
 import PaymentReturn from './components/PaymentReturn';
+import IELTSPrep from './components/IELTSPrep';
 import MainLayout from './components/MainLayout';
 import { Toaster } from 'sonner';
 
@@ -47,7 +48,7 @@ function App() {
             <Brain size={20} strokeWidth={1.5} />
           </div>
           <div className="flex flex-col items-center gap-2">
-            <div className="text-[11px] font-bold text-neutral-900 uppercase tracking-[0.3em]">Typer AI</div>
+            <div className="text-[11px] font-bold text-neutral-900 uppercase tracking-[0.3em]">Ovvox Ai</div>
             <div className="text-[10px] text-neutral-400 font-medium uppercase tracking-[0.1em]">Initializing Workspace...</div>
           </div>
         </div>
@@ -70,6 +71,7 @@ function App() {
         <Route path="/kids" element={<AuthenticatedRoute session={session}><KidsChat session={session} /></AuthenticatedRoute>} />
         <Route path="/profile" element={<AuthenticatedRoute session={session}><ProfilePage session={session} /></AuthenticatedRoute>} />
         <Route path="/notebook" element={<AuthenticatedRoute session={session}><NotebookPage session={session} /></AuthenticatedRoute>} />
+        <Route path="/ielts" element={<AuthenticatedRoute session={session}><IELTSPrep session={session} /></AuthenticatedRoute>} />
         <Route path="/math" element={<AuthenticatedRoute session={session}><MathCenter session={session} /></AuthenticatedRoute>} />
         <Route path="/pricing" element={<AuthenticatedRoute session={session}><PricingPage session={session} /></AuthenticatedRoute>} />
         <Route path="/payment-return" element={<AuthenticatedRoute session={session}><PaymentReturn session={session} /></AuthenticatedRoute>} />

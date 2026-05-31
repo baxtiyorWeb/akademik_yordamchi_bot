@@ -80,7 +80,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} data-tooltip="Bosh sahifaga qaytish">
             <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white font-bold text-sm group-hover:bg-indigo-600 transition-colors">T</div>
-            <span className="text-lg font-bold tracking-tight">Typer AI</span>
+            <span className="text-lg font-bold tracking-tight">Ovvox Ai</span>
           </div>
 
           <div className="hidden lg:flex items-center gap-10">
@@ -218,7 +218,7 @@ const LandingPage = () => {
           <div className="space-y-6">
             <div className="flex items-center gap-3">
               <div className="w-6 h-6 bg-black rounded flex items-center justify-center text-white font-bold text-xs">T</div>
-              <span className="font-bold text-neutral-900">Typer AI</span>
+              <span className="font-bold text-neutral-900">Ovvox Ai</span>
             </div>
             <p className="text-[13px] text-neutral-400 max-w-xs font-medium leading-relaxed">Automating academic excellence through advanced multimodal intelligence.</p>
           </div>

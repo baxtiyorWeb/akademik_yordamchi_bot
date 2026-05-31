@@ -4,14 +4,14 @@ import { useTranslation } from 'react-i18next';
 import {
   LayoutGrid, BookOpen, MessageSquare, Users, AppWindow,
   Settings, LogOut, Search, Plus, Bell, ChevronDown, Command, CreditCard, Mic, Share2,
-  Brain, Zap
+  Brain, Zap, Award
 } from 'lucide-react';
 import LanguageSwitcher from './LanguageSwitcher';
 import { supabase } from '../supabase';
 import { useNotebook } from '../hooks/useNotebook';
 import { useProfile } from '../hooks/useProfile';
 
-// SVG Gradient component to be used by icons
+
 const IconGradient = () => (
   <svg width="0" height="0" className="absolute">
     <linearGradient id="blue-purple-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -25,6 +25,7 @@ const navItems = [
   { icon: <LayoutGrid size={18} strokeWidth={2} />, labelKey: 'dashboard', path: '/profile' },
   { icon: <MessageSquare size={18} strokeWidth={2} />, labelKey: 'ai_assistant', path: '/tutor' },
   { icon: <BookOpen size={18} strokeWidth={2} />, labelKey: 'notebook_lm', path: '/notebook' },
+  // { icon: <Award size={18} strokeWidth={2} />, labelKey: 'ielts_prep', path: '/ielts' },
   { icon: <AppWindow size={18} strokeWidth={2} />, labelKey: 'math_center', path: '/math' },
   { icon: <CreditCard size={18} strokeWidth={2} />, labelKey: 'plans', path: '/pricing' },
 ];
@@ -52,7 +53,7 @@ function MainLayout({ children, session }) {
       <aside className="hidden md:flex w-64 bg-white border-r border-slate-100 flex-col z-30 shadow-sm">
         <div className="p-6 border-b border-slate-50 flex items-center gap-3">
           <div className="w-8 h-8 bg-linear-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-100">T</div>
-          <span className="text-[16px] font-semibold tracking-tight text-slate-900">Typer AI</span>
+          <span className="text-[16px] font-semibold tracking-tight text-slate-900">Ovvox Ai</span>
         </div>
 
         <div className="p-4">
@@ -74,8 +75,8 @@ function MainLayout({ children, session }) {
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[14px] font-medium transition-all ${isActive
-                    ? 'bg-slate-900 text-white shadow-lg shadow-slate-200'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                  ? 'bg-slate-900 text-white shadow-lg shadow-slate-200'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                   }`}
               >
                 <span style={{ stroke: isActive ? 'white' : 'url(#blue-purple-gradient)' }}>
@@ -100,7 +101,6 @@ function MainLayout({ children, session }) {
         </div>
       </aside>
 
-      {/* --- MOBILE BOTTOM NAVBAR --- */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-100 flex items-center justify-around z-30 px-2 shadow-lg">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path || (item.path === '/' && location.pathname === '/tutor');
@@ -123,7 +123,6 @@ function MainLayout({ children, session }) {
         })}
       </div>
 
-      {/* --- MAIN AREA --- */}
       <main className="flex-1 flex flex-col min-w-0 bg-white relative pb-16 md:pb-0">
         <header className="h-14 border-b border-slate-50 flex items-center justify-between px-6 md:px-8 z-20 bg-white/80 backdrop-blur-md">
           <div className="flex flex-col text-left">
@@ -131,6 +130,7 @@ function MainLayout({ children, session }) {
             <span className="md:hidden text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
               {location.pathname === '/notebook' && `${entries.length} TA SAQLANGAN MANBA`}
               {location.pathname === '/tutor' && "AI Professional Tutor"}
+              {location.pathname === '/ielts' && "IELTS Band 9.0 Preparation"}
               {location.pathname === '/math' && "Math & OCR Center"}
               {location.pathname === '/profile' && "Dashboard Overview"}
               {location.pathname === '/pricing' && "Simple Tariflar"}
@@ -143,7 +143,6 @@ function MainLayout({ children, session }) {
               <Share2 size={14} /> Ulashish
             </button>
 
-            {/* Header Profile Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
