@@ -12,6 +12,7 @@ import NotebookPage from './components/NotebookPage';
 import PricingPage from './components/PricingPage';
 import PaymentReturn from './components/PaymentReturn';
 import IELTSPrep from './components/IELTSPrep';
+import StudyPlansPage from './components/StudyPlansPage';
 import MainLayout from './components/MainLayout';
 import { Toaster } from 'sonner';
 
@@ -74,6 +75,7 @@ function App() {
         <Route path="/ielts" element={<AuthenticatedRoute session={session}><IELTSPrep session={session} /></AuthenticatedRoute>} />
         <Route path="/math" element={<AuthenticatedRoute session={session}><MathCenter session={session} /></AuthenticatedRoute>} />
         <Route path="/pricing" element={<AuthenticatedRoute session={session}><PricingPage session={session} /></AuthenticatedRoute>} />
+        <Route path="/plans" element={<AuthenticatedRoute session={session}><StudyPlansPage session={session} /></AuthenticatedRoute>} />
         <Route path="/payment-return" element={<AuthenticatedRoute session={session}><PaymentReturn session={session} /></AuthenticatedRoute>} />
       </Routes>
     </BrowserRouter>

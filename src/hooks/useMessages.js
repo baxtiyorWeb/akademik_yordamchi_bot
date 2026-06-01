@@ -65,16 +65,17 @@ export const useMessages = (session) => {
   }, [messagesQuery.data]);
 
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ userText, currentMessages, attachment, mode = 'TUTOR' }) => {
+    mutationFn: async ({ userText, currentMessages, attachment, mode = 'TUTOR', hidden = false, visibleText }) => {
       if (!userId) return;
 
       let currentSessionId = activeSessionId;
 
       // 1. Agar joriy sessiya bo'lmasa, yangi 'tutor_sessions' yaratamiz
       if (!currentSessionId) {
+        const title = hidden ? 'Masterclass Plan' : (visibleText ?? userText).substring(0, 30) + '...';
         const { data: newSession, error: sessionErr } = await supabase
           .from('tutor_sessions')
-          .insert([{ user_id: userId, title: userText.substring(0, 30) + '...' }])
+          .insert([{ user_id: userId, title }])
           .select()
           .single();
         if (sessionErr) throw sessionErr;
@@ -84,26 +85,33 @@ export const useMessages = (session) => {
         queryClient.invalidateQueries({ queryKey: ['tutor_sessions', userId] });
       }
 
-      // 2. Foydalanuvchi xabarini saqlash
-      let dbContent = userText;
+      let dbContent = visibleText ?? userText;
       if (attachment) {
         const fileName = attachment.name || `image_${Date.now()}.png`;
         dbContent += `\n\n[Ilova: ${fileName}]`;
       }
-      
-      const { data: userMsg, error: userErr } = await supabase
-        .from('messages')
-        .insert([{ user_id: userId, session_id: currentSessionId, role: 'user', content: dbContent }])
-        .select()
-        .single();
-      
-      if (userErr) throw userErr;
+
+      let userMsg = null;
+      if (!hidden) {
+        const { data: userData, error: userErr } = await supabase
+          .from('messages')
+          .insert([{ user_id: userId, session_id: currentSessionId, role: 'user', content: dbContent }])
+          .select()
+          .single();
+        if (userErr) throw userErr;
+        userMsg = userData;
+
+        queryClient.setQueryData(['messages', currentSessionId], (old = []) => [
+          ...old.filter(m => !m.id?.toString().startsWith('temp-')), 
+          { id: userMsg.id, role: 'user', content: dbContent },
+        ]);
+      }
 
       // 3. AI streamni tayyorlash
       const tempAiId = `a-temp-${Date.now()}`;
       queryClient.setQueryData(['messages', currentSessionId], (old = []) => [
-        ...old.filter(m => !m.id?.toString().startsWith('temp-')), 
-        { id: userMsg.id, role: 'user', content: dbContent },
+        ...old.filter(m => !m.id?.toString().startsWith('temp-')),
+        ...(!hidden && userMsg ? [] : []),
         { id: tempAiId, role: 'ai', content: '', isNew: true }
       ]);
 
@@ -147,14 +155,14 @@ export const useMessages = (session) => {
 
       return { userText, replyText: fullReply, sessionId: currentSessionId };
     },
-    onMutate: async ({ userText }) => {
-      if (!activeSessionId) return; // Agar hali sessiya yo'q bo'lsa optimistik qilish shartmas
+    onMutate: async ({ userText, hidden, visibleText }) => {
+      if (!activeSessionId || hidden) return; // Agar hali sessiya yo'q bo'lsa optimistik qilish shartmas
       await queryClient.cancelQueries({ queryKey: ['messages', activeSessionId] });
       const previousMessages = queryClient.getQueryData(['messages', activeSessionId]);
 
       queryClient.setQueryData(['messages', activeSessionId], (old = []) => [
         ...old,
-        { id: `temp-u-${Date.now()}`, role: 'user', content: userText }
+        { id: `temp-u-${Date.now()}`, role: 'user', content: visibleText ?? userText }
       ]);
 
       return { previousMessages };

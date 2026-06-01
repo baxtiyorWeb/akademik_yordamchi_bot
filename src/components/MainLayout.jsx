@@ -27,7 +27,7 @@ const navItems = [
   { icon: <BookOpen size={18} strokeWidth={2} />, labelKey: 'notebook_lm', path: '/notebook' },
   // { icon: <Award size={18} strokeWidth={2} />, labelKey: 'ielts_prep', path: '/ielts' },
   { icon: <AppWindow size={18} strokeWidth={2} />, labelKey: 'math_center', path: '/math' },
-  { icon: <CreditCard size={18} strokeWidth={2} />, labelKey: 'plans', path: '/pricing' },
+  { icon: <CreditCard size={18} strokeWidth={2} />, label: 'Rejalar', path: '/plans' },
 ];
 
 function MainLayout({ children, session }) {
@@ -69,7 +69,7 @@ function MainLayout({ children, session }) {
 
         <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto custom-scrollbar">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path || (item.path === '/' && location.pathname === '/tutor');
+            const isActive = location.pathname === item.path || (item.path === '/' && item.path === '/tutor');
             return (
               <button
                 key={item.path}
@@ -84,7 +84,7 @@ function MainLayout({ children, session }) {
                     stroke: isActive ? 'currentColor' : 'url(#blue-purple-gradient)'
                   })}
                 </span>
-                {t(item.labelKey)}
+                {item.label || t(item.labelKey)}
               </button>
             );
           })}

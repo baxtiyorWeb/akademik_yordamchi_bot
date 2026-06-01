@@ -1,10 +1,12 @@
 import React, {
   useState, useRef, useEffect, useCallback, useMemo, useId,
 } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Brain, Plus, Copy, Download, FileText, X, Sparkles,
   ChevronRight, BookOpen, Bot, Calendar, Presentation,
   Moon, Sun, Palette, Terminal, Paperclip, ArrowUp, LoaderCircle,
+  Clock, CalendarDays, BarChart3, ClipboardCheck, Rocket,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -62,9 +64,47 @@ const formatTutorBlocks = (text) => {
     .replace(/^:::note\s*/gim, '\n\n')
     .replace(/^:::solution\s*/gim, '\n\n')
     .replace(/^:::(?:summary|xulosa)\s*/gim, '\n\n')
+    // theorem/lemma/rule blocks -> keep as raw HTML blocks so rehypeRaw can render them
+    .replace(/:::(theorem|lemma|rule|qoid)\s*([\s\S]*?):::/gi, (m, t, body, offset) => {
+      // choose variant by simple hash and inline styles for consistent look
+      const variants = ['violet', 'indigo', 'emerald', 'amber', 'slate'];
+      const colors = {
+        violet: { bg: '#f5f3ff', border: '#ddd6fe', title: '#5b21b6' },
+        indigo: { bg: '#eef2ff', border: '#e0e7ff', title: '#3730a3' },
+        emerald: { bg: '#ecfdf5', border: '#bbf7d0', title: '#065f46' },
+        amber: { bg: '#fffbeb', border: '#fef3c7', title: '#92400e' },
+        slate: { bg: '#f8fafc', border: '#e6edf3', title: '#0f172a' },
+      };
+      const idx = Math.abs((t + body).split('').reduce((s,c)=>s + c.charCodeAt(0),0)) % variants.length;
+      const v = variants[idx];
+      const title = t.charAt(0).toUpperCase() + t.slice(1);
+      const safeBody = body.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim().replace(/\n/g, '<br/>');
+      const style = `background:${colors[v].bg};border:1px solid ${colors[v].border};padding:10px;border-radius:10px;margin:6px 0;font-size:14px;line-height:1.45`;
+      const titleStyle = `color:${colors[v].title};font-weight:600;margin-bottom:6px`;
+      return `\n\n<div data-qt-type="${t}" style="${style}"><div style="${titleStyle}">${title}.</div><div>${safeBody}</div></div>\n\n`;
+    })
     .replace(/:::rating\s*Today Rating:\s*([^\n]+?)(?:\s+Izoh:\s*([\s\S]*?))?(?=\n|$)/gi, '')
     .replace(/\[daily study time\]:\s*([^\n]+)/gi, '')
     .trim();
+};
+
+// Small helper to detect continuation prompts that should auto-run
+const isAutoContinuePrompt = (text) => {
+  if (!text) return false;
+  const s = text.toLowerCase();
+  return /(iltimos[\s\S]*oldingi javobni davom ettir|please continue|continue the previous)/i.test(s) || s.includes('avvalgi javob');
+};
+
+// Detect if content is a study plan
+const isStudyPlan = (text) => {
+  if (!text) return false;
+  const s = text.toLowerCase();
+  return (
+    (s.includes('o\'quv rejasi') || s.includes('study plan') || s.includes('kunlik plan') || 
+     s.includes('haftalik plan') || s.includes('soatlik plan') || s.includes('masterclass')) &&
+    (s.includes('vaqt') || s.includes('maqsad') || s.includes('topshiriq') || s.includes('time') ||
+     s.includes('task') || s.includes('module'))
+  );
 };
 
 /* ─── Mermaid ─────────────────────────────────────────────────── */
@@ -211,7 +251,7 @@ const mdComponents = (isStreaming = false) => ({
 });
 
 /* ─── BotMessage ──────────────────────────────────────────────── */
-const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onContinue }) => {
+const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onContinue, onPlanSave, setPlanToSave, setConfirmSave }) => {
   const [unlockedSteps, setUnlockedSteps] = useState(1);
   const messageRef = useRef(null);
   const components = useMemo(() => mdComponents(isStreaming), [isStreaming]);
@@ -293,6 +333,16 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onConti
       return { mainBody: processedContent, noteData: null, summaryText: null, steps: [], solution: null, exportData: null };
     }
   }, [processedContent, isStreaming]);
+
+  // auto-continue detection: trigger onContinue automatically without showing prompt
+  const autoContinue = !isStreaming && isAutoContinuePrompt(mainBody || '');
+  useEffect(() => {
+    if (autoContinue && onContinue) {
+      const t = setTimeout(() => onContinue(), 200);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [autoContinue, onContinue]);
 
   const handleExport = useCallback(async (e, slidesParam = null, themeParam = null) => {
     if (e?.stopPropagation) e.stopPropagation();
@@ -385,14 +435,14 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onConti
     const { slides, theme } = slideDeckData;
     const ts = slideThemeStyles[theme] || slideThemeStyles.dark;
     return (
-      <div ref={messageRef} className={`${ts.wrap} border rounded-2xl p-4 sm:p-6 w-full`}>
+      <div ref={messageRef} className={`${ts.wrap} border rounded-2xl p-4 sm:p-6  wrap-break-word `}>
         <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b ${ts.divider} pb-4`}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
               <Presentation size={20} className={ts.accent} />
             </div>
             <div className="min-w-0">
-              <h3 className={`text-[14px] font-semibold ${ts.text} truncate`}>{slides[0]?.title || 'Taqdimot'}</h3>
+              <h3 className={`text-[14px] font-semibold text-wrap ${ts.text} truncate`}>{slides[0]?.title || 'Taqdimot'}</h3>
               <p className={`text-[10px] font-medium ${ts.sub} uppercase tracking-wider mt-0.5`}>{slides.length} slayd · {theme.toUpperCase()}</p>
             </div>
           </div>
@@ -437,15 +487,41 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onConti
         </div>
       )}
 
-      <div className="prose prose-slate max-w-none">
-        {isStreaming
-          ? <StreamingText content={mainBody} />
-          : <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex, rehypeRaw]} components={components}>{mainBody}</ReactMarkdown>
-        }
-      </div>
+      {!autoContinue && (
+        <div className="prose prose-slate max-w-none">
+          {isStreaming
+            ? <StreamingText content={mainBody} />
+            : <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex, rehypeRaw]} components={components}>{mainBody}</ReactMarkdown>
+          }
+        </div>
+      )}
 
       {!isStreaming && (
         <>
+          {isStudyPlan(mainBody) && setPlanToSave && (
+            <div className="mb-4 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="text-2xl">📚</div>
+                <div>
+                  <p className="text-[13px] font-bold text-slate-900">Masterclass o'quv rejasi tayyor</p>
+                  <p className="text-[11px] text-slate-600 mt-0.5">Rejani saqlashni tasdiqlaysizmi?</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  const titleMatch = mainBody.match(/## (.+?)(?:\n|$)/);
+                  const title = titleMatch?.[1] || 'Study Plan';
+                  const typeMatch = mainBody.toLowerCase().includes('soatlik') ? 'hourly' : 
+                                    mainBody.toLowerCase().includes('haftalik') ? 'weekly' : 'daily';
+                  setPlanToSave({ title, type: typeMatch, content: mainBody });
+                  setConfirmSave?.(true);
+                }}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[12px] font-bold rounded-lg transition-all shrink-0"
+              >
+                Saqlash 💾
+              </button>
+            </div>
+          )}
           {noteData && <SmartNoteLM title={noteData.title} content={noteData.content} onSave={onSave} />}
 
           {summaryText && (
@@ -482,8 +558,8 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onConti
             </button>
           )}
 
-          {onContinue && (
-            <div className="mt-3">
+          {onContinue && !isStreaming && (
+            <div className="mt-3 hidden">
               <button onClick={onContinue}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-[13px] font-semibold hover:bg-indigo-700 transition-colors">
                 Javobni davom ettirish
@@ -501,6 +577,35 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onConti
           )}
         </>
       )}
+    </div>
+  );
+});
+
+/* ─── SavePlanConfirmModal ────────────────────────────────────── */
+const SavePlanConfirmModal = React.memo(({ open, title, onConfirm, onCancel }) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[230] flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-slate-100">
+        <h3 className="text-[16px] font-bold text-slate-900 mb-3">📋 Planni tasdiqlaysizmi?</h3>
+        <p className="text-[14px] text-slate-600 mb-6 leading-relaxed">
+          <strong>{title}</strong> uchun yaratilgan o'quv rejasi saqlanadi. Keyin uni qayta ko'rishingiz mumkin.
+        </p>
+        <div className="flex gap-3">
+          <button 
+            onClick={onCancel}
+            className="flex-1 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition-all"
+          >
+            Bekor qilish
+          </button>
+          <button 
+            onClick={onConfirm}
+            className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all"
+          >
+            Saqlash ✓
+          </button>
+        </div>
+      </div>
     </div>
   );
 });
@@ -652,9 +757,10 @@ JSON oxirida: [SLIDE_THEME: ${wizard.theme}]`;
           <button
             onClick={() => { onSend(buildPrompt(), file); onClose(); }}
             disabled={!wizard.topic.trim()}
-            className="w-full py-3.5 bg-indigo-600 text-white rounded-2xl font-semibold text-[14px] hover:bg-indigo-700 transition-colors disabled:opacity-40"
+            className="w-full py-3.5 bg-indigo-600 text-white rounded-2xl font-semibold text-[14px] hover:bg-indigo-700 transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
           >
-            Taqdimot yaratish 🚀
+            <Rocket size={16} />
+            <span>Taqdimot yaratish</span>
           </button>
           <button
             onClick={() => { onSend(wizard.topic, file); onClose(); }}
@@ -668,13 +774,125 @@ JSON oxirida: [SLIDE_THEME: ${wizard.theme}]`;
   );
 });
 
+/* ─── PlanModal (dynamic /plan command) ───────────────────────── */
+const PlanModal = React.memo(({ open, setOpen, initialTopic, onSend, session }) => {
+  const [topic, setTopic] = useState(initialTopic || '');
+  const [selectedType, setSelectedType] = useState('daily'); // 'hourly', 'daily', 'weekly'
+  const [confirmSave, setConfirmSave] = useState(false);
+
+  useEffect(() => { if (open) setTopic(initialTopic || ''); }, [open, initialTopic]);
+
+  if (!open) return null;
+
+  const planTypes = [
+    { id: 'hourly', label: 'Soatlik Plan', icon: Clock },
+    { id: 'daily', label: 'Kunlik Plan', icon: CalendarDays },
+    { id: 'weekly', label: 'Haftalik Plan', icon: BarChart3 },
+  ];
+
+  const handleGeneratePlan = () => {
+    if (!topic.trim()) return;
+    const planTypeText = selectedType === 'hourly' ? 'soatlik' : selectedType === 'daily' ? 'kunlik' : 'haftalik';
+    const prompt = `${topic} mavzusi uchun mukammal va ba'zi tafsilotli masterclass ${planTypeText} o'quv rejasini tuz.
+
+Har bir bosqich uchun aniq vaqt, maqsad, asosiy nazariy qism, topshiriq, baholash mezonlari va uyga vazifa kiritsin.
+
+Javob faqat matn shaklida bo'lsin.`;
+    onSend(prompt);
+    setOpen(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[220] flex items-end sm:items-center justify-center p-4">
+      <div className="bg-white w-full sm:max-w-xl rounded-3xl border border-slate-100 shadow-2xl flex flex-col max-h-[80dvh] overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <BookOpen size={20} className="text-indigo-600" />
+            <h3 className="text-[16px] font-bold text-slate-900">Masterclass O'quv Rejasi</h3>
+          </div>
+          <button onClick={() => setOpen(false)} className="p-2 hover:bg-slate-100 rounded-xl"><X size={18} /></button>
+        </div>
+        <div className="p-6 overflow-y-auto flex-1 space-y-5">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <BookOpen size={16} className="text-slate-500" />
+              <label className="text-[12px] font-bold text-slate-600 uppercase tracking-widest">Mavzu</label>
+            </div>
+            <input 
+              value={topic} 
+              onChange={e => setTopic(e.target.value)}
+              placeholder="Masalan: Algebra, Ingliz tili, Biologiya..."
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[14px] focus:border-indigo-400 focus:bg-white outline-none transition-all" 
+            />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Clock size={16} className="text-slate-500" />
+              <label className="text-[12px] font-bold text-slate-600 uppercase tracking-widest">Plan Turi</label>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {planTypes.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setSelectedType(id)}
+                  className={`p-3 rounded-xl border-2 transition-all text-center ${
+                    selectedType === id
+                      ? 'bg-indigo-50 border-indigo-400 text-indigo-900'
+                      : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-200'
+                  }`}
+                >
+                  <Icon size={20} className="mx-auto mb-2" />
+                  <div className="text-[13px] font-semibold">{label}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <ClipboardCheck size={20} className="text-indigo-600 mt-1" />
+              <p className="text-[13px] text-indigo-800 leading-relaxed">
+                <strong>Oʻquv rejangiz</strong> soatlik, kunlik yoki haftalik timetable bilan tayyorlanadi va to'liq taʼriflar, topshiriqlar va baholash mezonlari bilan biriktiriladi.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="p-5 border-t border-slate-100 flex gap-3">
+          <button 
+            onClick={() => setOpen(false)}
+            className="flex-1 px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition-all"
+          >
+            Bekor qilish
+          </button>
+          <button 
+            onClick={handleGeneratePlan}
+            disabled={!topic.trim()}
+            className="flex-1 px-4 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold transition-all flex items-center justify-center gap-2"
+          >
+            <Rocket size={16} />
+            <span>Rejani Yaratish</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 /* ─── TutorChat (main) ────────────────────────────────────────── */
 const TutorChat = ({ session }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const assistSentRef = useRef(false);
   const { messages, isSending, sendMessage, chatSessions, activeSessionId, changeSession } = useMessages(session);
   const { saveEntry } = useNotebook(session);
   const [mode, setMode] = useState('TUTOR');
   const [showAssignments, setShowAssignments] = useState(false);
   const [slideWizard, setSlideWizard] = useState(null);
+  const [planOpen, setPlanOpen] = useState(false);
+  const [planInitialTopic, setPlanInitialTopic] = useState('');
+  const [planToSave, setPlanToSave] = useState(null);
+  const [confirmSavePlan, setConfirmSavePlan] = useState(false);
+  const [savedPlans, setSavedPlans] = useState([]);
+  const [loadingPlans, setLoadingPlans] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef(null);
 
@@ -689,6 +907,13 @@ const TutorChat = ({ session }) => {
   const handleSave = useCallback(t => saveEntry(t), [saveEntry]);
 
   const handleSendMessage = useCallback((text, attachment) => {
+    const trimmed = (text || '').trim();
+    if (trimmed.startsWith('/plan')) {
+      const topic = trimmed.slice(5).trim();
+      setPlanInitialTopic(topic);
+      setPlanOpen(true);
+      return;
+    }
     const isSlide = ['slayd', 'prezentatsiya', 'taqdimot', 'presentation', 'pptx', 'slide']
       .some(k => text.toLowerCase().includes(k));
     if (isSlide) {
@@ -697,6 +922,75 @@ const TutorChat = ({ session }) => {
       sendMessage({ userText: text, attachment, mode, currentMessages: messages });
     }
   }, [mode, messages, sendMessage]);
+
+  const loadSavedPlans = useCallback(async () => {
+    if (!session?.user?.id) return;
+    setLoadingPlans(true);
+    try {
+      const { supabase } = await import('../supabase.js');
+      const { data, error } = await supabase
+        .from('study_plans')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setSavedPlans(data || []);
+    } catch (err) {
+      console.error('Load saved plans error:', err);
+      toast.error('Rejalar yuklanmadi');
+    } finally {
+      setLoadingPlans(false);
+    }
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    if (session?.user?.id) loadSavedPlans();
+  }, [session?.user?.id, loadSavedPlans]);
+
+  useEffect(() => {
+    const plan = location.state?.assistPlan;
+    if (plan && session?.user?.id && !assistSentRef.current) {
+      assistSentRef.current = true;
+      sendMessage({
+        userText: `Iltimos, bu saqlangan rejani AI yordamida tekshirib chiqing va uni yanada mukammallashtiring:\n\n${plan.content}`,
+        attachment: null,
+        mode,
+        currentMessages: messages,
+        hidden: true,
+      });
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location, session?.user?.id, sendMessage, mode, messages, navigate]);
+
+  const handlePlanSend = useCallback((prompt) => {
+    sendMessage({ userText: prompt, attachment: null, mode, currentMessages: messages, hidden: true });
+  }, [mode, messages, sendMessage]);
+
+  const handleSavePlan = useCallback(async () => {
+    if (!planToSave || !session?.user?.id) {
+      toast.error('Xatolik: Foydalanuvchi ma\'lumotlari topilmadi');
+      return;
+    }
+    
+    try {
+      const { supabase } = await import('../supabase.js');
+      const { error } = await supabase.from('study_plans').insert({
+        user_id: session.user.id,
+        topic: planToSave.title || 'Untitled Plan',
+        plan_type: planToSave.type || 'daily',
+        content: planToSave.content,
+      });
+      
+      if (error) throw error;
+      toast.success('Reja saqlandi! ✓');
+      setConfirmSavePlan(false);
+      setPlanToSave(null);
+      loadSavedPlans();
+    } catch (err) {
+      console.error('Save plan error:', err);
+      toast.error('Rejani saqlashda xatolik: ' + (err.message || 'Unknown error'));
+    }
+  }, [planToSave, session, loadSavedPlans]);
 
   const handleWizardSend = useCallback((text, file) => {
     sendMessage({ userText: text, attachment: file, mode, currentMessages: messages });
@@ -774,6 +1068,44 @@ const TutorChat = ({ session }) => {
             className="w-full py-2.5 rounded-xl bg-slate-900 text-white text-[12px] font-semibold hover:bg-slate-800 transition-all">
             {showAssignments ? 'Vazifalarni yashirish' : "Vazifalarni ko'rsatish"}
           </button>
+          {savedPlans.length > 0 ? (
+            <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Saqlangan rejalaringiz</p>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <button onClick={loadSavedPlans} className="text-[11px] text-indigo-600 hover:text-indigo-800">Yangilash</button>
+                  <button
+                    onClick={() => navigate('/plans')}
+                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 transition"
+                  >
+                    Barcha rejalar sahifasi
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
+                {savedPlans.map(plan => (
+                  <div key={plan.id} className="rounded-2xl border border-slate-200 p-3 bg-white min-w-0 break-words">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold text-slate-900 truncate">{plan.topic}</p>
+                        <p className="text-[11px] text-slate-500 mt-1">{plan.plan_type} · {new Date(plan.created_at).toLocaleDateString()}</p>
+                      </div>
+                      <button
+                        onClick={() => sendMessage({ userText: `Iltimos, bu saqlangan rejani davom ettir: ${plan.content}`, attachment: null, mode, currentMessages: messages })}
+                        className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-3 py-1.5 text-white text-[11px] font-semibold hover:bg-indigo-700 transition"
+                      >
+                        Foydalanish
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-2xl text-[12px] text-slate-500">
+              {loadingPlans ? 'Rejalar yuklanmoqda...' : 'Hozircha saqlangan reja yo‘q.'}
+            </div>
+          )}
           {showAssignments && <TutorAssignments session={session} onClose={() => setShowAssignments(false)} />}
         </div>
       </aside>
@@ -818,11 +1150,11 @@ const TutorChat = ({ session }) => {
         </header>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto custom-scroll">
-          <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-5">
+        <div className="flex-1 overflow-y-auto custom-scroll overflow-hidden " >
+          <div className="max-w-dvw  mx-auto px-4 md:px-6 py-6 space-y-5">
             {messages.length === 0 ? (
               /* Empty state */
-              <div className="flex flex-col items-center justify-center min-h-[78dvh] text-center px-4">
+              <div className="flex  flex-col items-center justify-center min-h-[78dvh] text-center px-4">
                 <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mb-5 shadow-sm">
                   <Brain size={30} className="text-indigo-600" />
                 </div>
@@ -846,7 +1178,7 @@ const TutorChat = ({ session }) => {
                 </div>
               </div>
             ) : (
-              <>
+              <div className="flex flex-col gap-5 ">
                 {messages.map((m, i) => (
                   <div key={m.id || i}
                     className={`flex gap-3 msg-anim ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -866,6 +1198,8 @@ const TutorChat = ({ session }) => {
                             const resumePrompt = `Iltimos, oldingi javobni davom ettiring. Avvalgi javob:\n\n${m.content}\n\nDavom ettiring.`;
                             sendMessage({ userText: resumePrompt, attachment: null, mode, currentMessages: messages });
                           }}
+                          setPlanToSave={setPlanToSave}
+                          setConfirmSave={setConfirmSavePlan}
                         />
                       </div>
                     )}
@@ -885,7 +1219,7 @@ const TutorChat = ({ session }) => {
                     </div>
                   </div>
                 )}
-              </>
+              </div>
             )}
             <div ref={messagesEndRef} />
           </div>
@@ -908,6 +1242,13 @@ const TutorChat = ({ session }) => {
         setWizard={setSlideWizard}
         onSend={handleWizardSend}
         onClose={() => setSlideWizard(null)}
+      />
+      <PlanModal open={planOpen} setOpen={setPlanOpen} initialTopic={planInitialTopic} onSend={handlePlanSend} session={session} />
+      <SavePlanConfirmModal 
+        open={confirmSavePlan} 
+        title={planToSave?.title || 'Study Plan'} 
+        onConfirm={handleSavePlan}
+        onCancel={() => setConfirmSavePlan(false)}
       />
     </div>
   );
