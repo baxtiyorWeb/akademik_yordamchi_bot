@@ -367,7 +367,6 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onConti
   const speakTimerRef = useRef(null);
   const utterQueueRef = useRef([]);
   const speakingRef = useRef(false);
-
   // ── Mobile-safe TTS: jumlalarga bo'lib ketma-ket o'qish ──────────
   const stopSpeech = useCallback(() => {
     window.speechSynthesis?.cancel();
@@ -391,32 +390,46 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onConti
     utter.rate = 0.9;
     utter.pitch = 1;
 
-    // Prefer any available Uzbek voice, fallback to any available
+    // KUTMASDAN darhol mavjud ovozlarni olamiz. 
+    // Mobil qurilmada birinchi bosganda bo'sh bo'lishi mumkin, u holda telefonning default ovozidan foydalanadi.
     const voices = window.speechSynthesis.getVoices();
     const uzVoice = voices.find(v => v.lang.startsWith('uz')) ||
-      voices.find(v => v.lang.startsWith('ru')) || // Russian closer to Uzbek phonetics
+      voices.find(v => v.lang.startsWith('ru')) ||
       voices.find(v => v.default);
-    if (uzVoice) utter.voice = uzVoice;
+
+    if (uzVoice) {
+      utter.voice = uzVoice;
+    }
 
     utter.onend = () => {
       if (speakingRef.current) speakNext();
     };
+
     utter.onerror = (e) => {
-      if (e.error === 'interrupted') return; // user stopped
+      if (e.error === 'interrupted') return; // Foydalanuvchi to'xtatdi
       console.warn('TTS error:', e.error);
-      if (speakingRef.current) speakNext(); // skip broken chunk
+      if (speakingRef.current) speakNext(); // Xato bo'lsa ham keyingi jumlaga o'tish
     };
 
     window.speechSynthesis.speak(utter);
+
+    // BAZI ANDROID'LAR UCHUN HACK: speak() chaqirilgandan so'ng darhol resume() qilish kerak
+    if (/android/i.test(navigator.userAgent)) {
+      window.speechSynthesis.resume();
+    }
   }, [stopSpeech]);
 
   const handleSpeak = useCallback(() => {
-    if (!('speechSynthesis' in window)) return;
+    if (!('speechSynthesis' in window)) {
+      alert("Kechirasiz, brauzeringiz ovozli o'qishni qo'llab-quvvatlamaydi.");
+      return;
+    }
     if (isSpeaking) { stopSpeech(); return; }
 
-    // Strip markdown for cleaner audio
+    // Markdown belgilarni tozalash (oldingidek)
     const plainText = content
       .replace(/```[\s\S]*?```/g, ' kod bloki. ')
+      .replace(/#{1,6}\s*/g, '')
       .replace(/#{1,6}\s*/g, '')
       .replace(/\*\*(.+?)\*\*/g, '$1')
       .replace(/\*(.+?)\*/g, '$1')
@@ -430,7 +443,6 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onConti
 
     if (!plainText) return;
 
-    // Split into short sentences (≤200 chars) — prevents mobile timeout/pause
     const sentences = plainText
       .split(/(?<=[.!?؟])\s+/)
       .flatMap(s => {
@@ -446,20 +458,31 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onConti
     speakingRef.current = true;
     setIsSpeaking(true);
 
-    // Android Chrome auto-pauses after ~14s — resume every 5s
+    // 1-QADAM: MOBIL UNLOCK (ASOSIY YECHIM)
+    // Foydalanuvchi tugmani bosishi bilan darhol qisqa (bo'sh joy) ovozini chiqarib, 
+    // brauzerning Audio Context'ini uyg'otib olamiz.
+    const unlockUtterance = new SpeechSynthesisUtterance(' ');
+    window.speechSynthesis.speak(unlockUtterance);
+
+    // 2-QADAM: ANDROID UYQU REJIMINI BUZISH
+    // Har 10 soniyada qisqa pauza va resume orqali tizimni uxlatib qo'ymaslik
     speakTimerRef.current = setInterval(() => {
-      if (window.speechSynthesis.paused && speakingRef.current) {
+      if (!speakingRef.current) return;
+
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      } else {
+        // Bu kichik hack: ovozni to'xtatmay turib tizimni harakatga keltiradi
+        window.speechSynthesis.pause();
         window.speechSynthesis.resume();
       }
-    }, 5000);
+    }, 10000);
 
-    const unlockUtterance = new SpeechSynthesisUtterance('');
-    unlockUtterance.volume = 0; // Ovozini o'chirib qo'yamiz
-    window.speechSynthesis.speak(unlockUtterance);
-    // Wait for voices to load on first use (needed on mobile)
+    // 3-QADAM: ASINXRON KUTMASDAN DARHOL BOSHLASH
+    // onvoiceschanged() ni umuman kutmaymiz! 
     speakNext();
-  }, [content, isSpeaking, stopSpeech, speakNext]);
 
+  }, [content, isSpeaking, stopSpeech, speakNext]);
   // Cleanup on unmount or content change
   useEffect(() => {
     return () => { stopSpeech(); };
