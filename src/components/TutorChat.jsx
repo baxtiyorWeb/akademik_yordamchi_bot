@@ -250,6 +250,112 @@ const mdComponents = (isStreaming = false) => ({
   },
 });
 
+/* ─── InteractiveQuiz ─────────────────────────────────────────── */
+const InteractiveQuiz = React.memo(({ quizData }) => {
+  const [current, setCurrent] = useState(0);
+  const [selected, setSelected] = useState(null);
+  const [score, setScore] = useState(0);
+  const [finished, setFinished] = useState(false);
+
+  if (!quizData || quizData.length === 0) return null;
+
+  const q = quizData[current];
+
+  const handleSelect = (idx) => {
+    if (selected !== null) return;
+    setSelected(idx);
+    if (idx === q.correct) {
+      setScore(s => s + 1);
+    }
+  };
+
+  const nextQuestion = () => {
+    if (current < quizData.length - 1) {
+      setCurrent(c => c + 1);
+      setSelected(null);
+    } else {
+      setFinished(true);
+    }
+  };
+
+  if (finished) {
+    const percent = Math.round((score / quizData.length) * 100);
+    return (
+      <div className="my-5 bg-white border border-slate-200 rounded-2xl p-6 text-center shadow-sm">
+        <div className="w-16 h-16 mx-auto bg-indigo-50 rounded-full flex items-center justify-center mb-4">
+          <Sparkles size={28} className="text-indigo-600" />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 mb-2">Kviz Yakunlandi!</h3>
+        <p className="text-slate-600 mb-6">Siz {quizData.length} ta savoldan {score} tasiga to'g'ri javob berdingiz.</p>
+        <div className="w-full bg-slate-100 rounded-full h-3 mb-2 overflow-hidden">
+          <div className="bg-indigo-500 h-3 transition-all duration-1000" style={{ width: `${percent}%` }}></div>
+        </div>
+        <p className="text-sm font-bold text-indigo-600">{percent}% Natija</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="my-5 bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+      {/* Header */}
+      <div className="bg-slate-50 px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-indigo-600 font-bold text-xs uppercase tracking-wider">
+          <Brain size={14} /> Interaktiv Kviz
+        </div>
+        <div className="text-xs font-semibold text-slate-500 bg-white px-2 py-1 rounded-md shadow-sm border border-slate-100">
+          {current + 1} / {quizData.length}
+        </div>
+      </div>
+      
+      {/* Question */}
+      <div className="p-5">
+        <h4 className="text-base font-semibold text-slate-900 mb-4 leading-relaxed">
+          {q.q}
+        </h4>
+        
+        {/* Options */}
+        <div className="space-y-2">
+          {q.options?.map((opt, idx) => {
+            let stateClass = "border-slate-200 hover:border-indigo-300 hover:bg-slate-50 text-slate-700";
+            if (selected !== null) {
+              if (idx === q.correct) stateClass = "border-emerald-500 bg-emerald-50 text-emerald-800 font-medium";
+              else if (idx === selected) stateClass = "border-rose-400 bg-rose-50 text-rose-700";
+              else stateClass = "border-slate-100 bg-white text-slate-400 opacity-50";
+            }
+            
+            return (
+              <button
+                key={idx}
+                onClick={() => handleSelect(idx)}
+                disabled={selected !== null}
+                className={`w-full text-left px-4 py-3 rounded-xl border transition-all duration-200 flex items-center justify-between ${stateClass}`}
+              >
+                <span className="text-[14px]">{opt}</span>
+                {selected !== null && idx === q.correct && <ClipboardCheck size={16} className="text-emerald-500" />}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Explanation & Next */}
+        {selected !== null && (
+          <div className="mt-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className={`p-4 rounded-xl text-sm leading-relaxed mb-4 ${selected === q.correct ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
+              <strong>{selected === q.correct ? 'Ajoyib! ' : 'Diqqat qiling: '}</strong> {q.exp}
+            </div>
+            <button 
+              onClick={nextQuestion}
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-[14px] transition-colors"
+            >
+              {current < quizData.length - 1 ? 'Keyingi Savol' : 'Natijani Ko\'rish'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
 /* ─── BotMessage ──────────────────────────────────────────────── */
 const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onContinue, onPlanSave, setPlanToSave, setConfirmSave }) => {
   const [unlockedSteps, setUnlockedSteps] = useState(1);
@@ -293,8 +399,8 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onConti
     return null;
   }, [processedContent, isStreaming, messages]);
 
-  const { mainBody, noteData, summaryText, steps, solution, exportData } = useMemo(() => {
-    if (isStreaming) return { mainBody: processedContent, noteData: null, summaryText: null, steps: [], solution: null, exportData: null };
+  const { mainBody, noteData, summaryText, steps, solution, exportData, quizData } = useMemo(() => {
+    if (isStreaming) return { mainBody: processedContent, noteData: null, summaryText: null, steps: [], solution: null, exportData: null, quizData: null };
     try {
       let wc = processedContent;
       const exportRegex = /\[EXPORT_FILE:\s*(PDF|DOCX|PPTX)\s*\|\s*([\s\S]*?)\s*\|\s*([\s\S]*?)\]/i;
@@ -321,6 +427,18 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onConti
       let sm;
       while ((sm = stepRe.exec(wc))) if (sm[1]?.trim()) stepMatches.push(sm[1].trim());
       wc = wc.replace(/:::step[\s\S]*/gi, '').trim();
+      
+      const quizRegex = /:::quiz\s*([\s\S]*?)(?=:::(summary|xulosa|step|solution|note)|$)/i;
+      const quizMatch = wc.match(quizRegex);
+      let parsedQuizData = null;
+      if (quizMatch) {
+         let rawJson = quizMatch[1].trim();
+         const jsonMatch = rawJson.match(/```(?:json)?\s*([\s\S]*?)```/i);
+         if (jsonMatch) rawJson = jsonMatch[1];
+         parsedQuizData = safeParseJSON(rawJson);
+         wc = wc.replace(quizMatch[0], '').trim();
+      }
+
       return {
         mainBody: formatTutorBlocks(wc),
         noteData: noteData ? { ...noteData, content: formatTutorBlocks(noteData.content) } : null,
@@ -328,9 +446,10 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onConti
         steps: stepMatches.map(s => formatTutorBlocks(s)),
         solution: solMatch ? formatTutorBlocks(solMatch[1].trim()) : null,
         exportData: exportInfo ? { ...exportInfo, content: formatTutorBlocks(exportInfo.content) } : null,
+        quizData: Array.isArray(parsedQuizData) && parsedQuizData.length > 0 ? parsedQuizData : null,
       };
     } catch (_) {
-      return { mainBody: processedContent, noteData: null, summaryText: null, steps: [], solution: null, exportData: null };
+      return { mainBody: processedContent, noteData: null, summaryText: null, steps: [], solution: null, exportData: null, quizData: null };
     }
   }, [processedContent, isStreaming]);
 
@@ -486,6 +605,8 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onConti
           </button>
         </div>
       )}
+
+      {quizData && <InteractiveQuiz quizData={quizData} />}
 
       {!autoContinue && (
         <div className="prose prose-slate max-w-none">

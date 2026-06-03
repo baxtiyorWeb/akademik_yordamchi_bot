@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Plus, Search, Settings, RotateCcw, LayoutGrid, MessageSquare,
   CheckSquare, Users, AppWindow, LogOut, Brain, Zap, Target, BookOpen, Clock,
@@ -55,7 +55,7 @@ function KidsChat({ session }) {
     
     const loadingId = toast.loading('Preparing a game... 🎮');
     try {
-      const { fetchGeminiResponse } = await import('../api/gemini');
+      const { fetchGeminiResponse } = await import('./../lib/gemini.js');
       const response = await fetchGeminiResponse(quizPrompt, messages, null, 'KIDS');
       const jsonMatch = response.match(/\[[\s\S]*\]/);
       if (jsonMatch) {

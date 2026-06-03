@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   ChevronLeft, Trash2, Copy, BookOpen, 
   Search, Plus, Calendar, ExternalLink, Sparkles, X, Brain

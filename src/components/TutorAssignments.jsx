@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Calendar, Clock, Star, RefreshCw } from 'lucide-react';
 import { getAssignments, getStudyTime, getDailyRating } from '../api/tutor';
 

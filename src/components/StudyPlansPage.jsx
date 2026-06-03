@@ -1,6 +1,9 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { Search, Edit3, Save, ArrowRight, RefreshCcw, Cpu } from 'lucide-react';
@@ -214,7 +217,12 @@ const StudyPlansPage = ({ session }) => {
                         </div>
                       ) : (
                         <div className="mt-6 prose prose-slate max-w-none text-slate-700">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{plan.content}</ReactMarkdown>
+                          <ReactMarkdown 
+                            remarkPlugins={[remarkGfm, remarkMath]}
+                            rehypePlugins={[rehypeKatex]}
+                          >
+                            {plan.content}
+                          </ReactMarkdown>
                         </div>
                       )}
                     </article>

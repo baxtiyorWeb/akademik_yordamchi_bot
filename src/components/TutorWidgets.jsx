@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Star, Activity, AlertTriangle } from 'lucide-react';
 import { getDailyReport, getDailyProgress } from '../api/tutor';
 

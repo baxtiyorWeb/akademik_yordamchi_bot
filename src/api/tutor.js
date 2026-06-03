@@ -134,15 +134,9 @@ export async function upsertDailyReport({ userId, date = null, current_grade = n
     .select('*')
     .eq('user_id', userId)
     .eq('date', d)
-    .single();
+    .maybeSingle();
 
-  if (existingError) {
-    if (existingError.status === 406) {
-      dailyReportsEnabled = false;
-      return null;
-    }
-    throw existingError;
-  }
+  // maybeSingle returns null when no row exists; continue if existing is null
 
   if (existing) {
     const payload = { updated_at: new Date().toISOString() };
@@ -178,14 +172,8 @@ export async function getDailyReport({ userId, date = null }) {
     .select('*')
     .eq('user_id', userId)
     .eq('date', d)
-    .single();
-  if (error) {
-    if (error.status === 406) {
-      dailyReportsEnabled = false;
-      return null;
-    }
-    if (error.code !== 'PGRST116') throw error;
-  }
+    .maybeSingle();
+  if (error && error.code !== 'PGRST116') throw error;
   return data || null;
 }
 
@@ -197,15 +185,9 @@ export async function recordMessageEvaluation({ userId, messageGrade, topics = [
     .select('*')
     .eq('user_id', userId)
     .eq('date', d)
-    .single();
+    .maybeSingle();
 
-  if (existingError) {
-    if (existingError.status === 406) {
-      dailyReportsEnabled = false;
-      return null;
-    }
-    throw existingError;
-  }
+  // maybeSingle returns null when no row exists; continue if existing is null
 
   if (existing) {
     const prevCount = existing.eval_count || 0;

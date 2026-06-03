@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   LayoutGrid, BookOpen, MessageSquare, Users, AppWindow,
-  Settings, LogOut, Search, Plus, Bell, ChevronDown, Command, CreditCard, Mic, Share2,
+  Settings, LogOut, Search, Plus, Bell, ChevronDown, Command, Calendar, Mic, Share2,
   Brain, Zap, Award
 } from 'lucide-react';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -27,7 +27,7 @@ const navItems = [
   { icon: <BookOpen size={18} strokeWidth={2} />, labelKey: 'notebook_lm', path: '/notebook' },
   // { icon: <Award size={18} strokeWidth={2} />, labelKey: 'ielts_prep', path: '/ielts' },
   { icon: <AppWindow size={18} strokeWidth={2} />, labelKey: 'math_center', path: '/math' },
-  { icon: <CreditCard size={18} strokeWidth={2} />, label: 'Rejalar', path: '/plans' },
+  { icon: <Calendar size={18} strokeWidth={2} />, label: 'Rejalar', path: '/plans' },
 ];
 
 function MainLayout({ children, session }) {
@@ -51,10 +51,10 @@ function MainLayout({ children, session }) {
       <IconGradient />
 
       <aside className="hidden md:flex w-64 bg-white border-r border-slate-100 flex-col z-30 shadow-sm">
-        <div className="p-6 border-b border-slate-50 flex items-center gap-3">
+        <Link to={'/'} className="p-6 border-b border-slate-50 flex items-center gap-3">
           <div className="w-8 h-8 bg-linear-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-100">T</div>
           <span className="text-[16px] font-semibold tracking-tight text-slate-900">Ovvox Ai</span>
-        </div>
+        </Link>
 
         <div className="p-4">
           <div className="relative group">
@@ -142,7 +142,14 @@ function MainLayout({ children, session }) {
             <button className="hidden sm:flex items-center gap-2 px-5 py-2 bg-slate-900 text-white rounded-xl text-[13px] font-medium hover:opacity-90 transition-all shadow-xl shadow-slate-100">
               <Share2 size={14} /> Ulashish
             </button>
-
+            {/* UPGRADE BUTTON */}
+            <button
+              onClick={() => navigate('/pricing')}
+              className="hidden sm:inline-flex items-center px-4 py-2 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all text-xs font-normal tracking-widest uppercase shadow-sm border border-indigo-100"
+              style={{ letterSpacing: '0.12em' }}
+            >
+              Upgrade
+            </button>
             <div className="relative">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}

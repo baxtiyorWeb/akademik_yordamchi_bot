@@ -3,7 +3,7 @@
 //  gemini.js ga tegmaydi, alohida modul
 // ============================================================
 
-import { streamGeminiResponse, fetchGeminiResponse } from './gemini';
+import { streamGeminiResponse, fetchGeminiResponse } from './../lib/gemini.js';
 
 // ============================================================
 // IELTS SYSTEM PROMPTLARI

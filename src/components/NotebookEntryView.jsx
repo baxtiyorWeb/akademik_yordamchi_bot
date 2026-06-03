@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, Brain, BookOpen, MessageSquare, Sparkles, X, Send, Bookmark, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -6,7 +6,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
-import { generateNotebookQuiz, generateNotebookCheatSheet, streamGeminiResponse } from '../api/gemini';
+import { generateNotebookQuiz, generateNotebookCheatSheet, streamGeminiResponse } from './../lib/gemini.js';
 import { useNotebook } from '../hooks/useNotebook';
 import { toast } from 'sonner';
 
@@ -380,7 +380,9 @@ export default function NotebookEntryView({ entry, session, onBack, startWithQui
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] px-4 py-3 rounded-2xl ${msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}>
                   {msg.role === 'ai' && msg.content ? (
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex, rehypeRaw]}>
+                      {msg.content}
+                    </ReactMarkdown>
                   ) : msg.content || (
                     <div className="flex items-center gap-2 text-slate-500">
                       <Loader2 className="animate-spin" size={18} /> Tahlil qilinmoqda...

@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Sigma, Upload, Copy, Check, Trash2, FileText, Sparkles, ArrowLeft, Image as ImageIcon, Brain, History, Zap, Code, FileDown, Wand2, Type } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { toast } from 'sonner';
-import { streamGeminiResponse, fetchGeminiResponse } from '../api/gemini';
+import { streamGeminiResponse, fetchGeminiResponse } from './../lib/gemini.js';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 
 const MathCenter = () => {

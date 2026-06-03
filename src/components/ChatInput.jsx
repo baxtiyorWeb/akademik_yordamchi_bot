@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React,  { useState, useRef, useEffect, useCallback , memo} from 'react';
 import { ArrowUp, X, Paperclip, Mic, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 

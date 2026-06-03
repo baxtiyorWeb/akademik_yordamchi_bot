@@ -63,14 +63,21 @@ export default async function handler(req, res) {
       })
     });
 
+    const responseText = await tspayResponse.text();
     if (!tspayResponse.ok) {
-      const errText = await tspayResponse.text();
-      console.error('TSPay API Error:', errText);
-      return res.status(502).json({ detail: `TSPay API Error: ${errText}` });
+      console.error('TSPay API Error:', responseText);
+      return res.status(502).json({ detail: `TSPay API Error: ${responseText}` });
     }
 
-    const tspayData = await tspayResponse.json();
-    const { cheque_id, payment_url } = tspayData;
+    let tspayData;
+    try {
+      tspayData = JSON.parse(responseText);
+    } catch (e) {
+      console.error('TSPay API Invalid JSON:', responseText);
+      return res.status(502).json({ detail: 'Invalid response from TSPay API (not JSON)' });
+    }
+
+    const { cheque_id, payment_url } = tspayData || {};
 
     if (!cheque_id || !payment_url) {
       return res.status(502).json({ detail: 'Invalid response from TSPay API: cheque_id or payment_url is missing' });

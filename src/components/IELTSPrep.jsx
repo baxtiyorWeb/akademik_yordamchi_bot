@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   MessageSquare, Headphones, BookOpen, PenTool,
   Send, Mic, MicOff, Volume2, VolumeX, Play, Pause,
@@ -9,6 +9,9 @@ import {
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { toast } from 'sonner';
 
 import {
@@ -101,7 +104,7 @@ const AIMessage = ({ content, onSpeak, speaking }) => {
 
   return (
     <div className="prose prose-sm max-w-none text-slate-800 leading-relaxed">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{content}</ReactMarkdown>
       <div className="flex gap-2 mt-3 pt-2 border-t border-slate-100 not-prose">
         <button
           onClick={handleCopy}

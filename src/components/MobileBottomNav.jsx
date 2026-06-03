@@ -1,4 +1,3 @@
-import React from 'react';
 import { MessageSquare, CreditCard, LogOut, Mic } from 'lucide-react';
 
 function MobileBottomNav({ credits, onLogout, onVoiceCall }) {

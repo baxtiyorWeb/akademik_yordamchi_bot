@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
-import { streamGeminiResponse } from '../api/gemini';
+import { streamGeminiResponse } from './../lib/gemini.js';
 import { streamOpenRouterResponse } from '../api/openrouter';
 import { recordMessageEvaluation } from '../api/tutor';
 
