@@ -18,7 +18,7 @@ const BLACKLIST_TTL_MS = 60_000; // 60 s default cooldown
 
 // --- SENIOR ARXITEKTURA: IN-MEMORY CIRCUIT BREAKER & BALANCER STATE ---
 // Kalit + Model juftliklarining bloklanish vaqtini saqlash uchun global xotira (Map)
-const circuitBreaker = new Map<string, number>(); 
+const circuitBreaker = new Map<string, number>();
 
 // 🔥 MANA SHU YERGA QO'SHILADI:
 // Model xato berganda uni qancha muddatga (millisaniyada) qora ro'yxatda ushlab turish vaqti
@@ -33,7 +33,7 @@ function isAvailable(apiKey: string, model: string): boolean {
   const cbKey = getCircuitBreakerKey(apiKey, model);
   const blockedUntil = circuitBreaker.get(cbKey);
   if (!blockedUntil) return true;
-  
+
   if (Date.now() > blockedUntil) {
     circuitBreaker.delete(cbKey); // Muddat tugadi, qora ro'yxatdan olamiz
     return true;
@@ -53,11 +53,11 @@ declare const Deno: {
 } | any;
 const MODELS = {
 
-  LIGHT:  ["gemini-3.1-flash-lite", "gemini-3.1-flash-lite", "gemini-2.5-flash-8b", "gemini-2.5-flash"],
+  LIGHT: ["gemini-3.1-flash-lite", "gemini-3.1-flash-lite", "gemini-2.5-flash-8b", "gemini-2.5-flash"],
 
   MEDIUM: ["gemini-3.5-flash", "gemini-3.1-flash", "gemini-3.1-flash-lite"],
 
-  HEAVY:  ["gemini-3.1-pro-preview", "gemini-2.5-pro", "gemini-2.5-flash"],
+  HEAVY: ["gemini-3.1-pro-preview", "gemini-2.5-pro", "gemini-2.5-flash"],
 
 } as const;
 
@@ -65,7 +65,7 @@ const MODELS = {
 type Mode =
   | "TUTOR" | "KIDS"
   | "IELTS_SPEAKING" | "IELTS_LISTENING"
-  | "IELTS_READING"  | "IELTS_WRITING"
+  | "IELTS_READING" | "IELTS_WRITING"
   | "CODER";
 
 const SYSTEM_PROMPTS: Record<string, string> = {
@@ -79,7 +79,7 @@ QOIDALAR:
 - O'quv Rejasi: Haftalik va oylik rejani ta'klif et. Ishonchli manbalarni (kitob, kurs, video) tavsiya qil.
 - Mavzu Doirasi: Foydalanuvchi chalg'igan holatda uni mavzu doirasiga qaytarish. Birinchi yangi mavzuga o'tishdan oldin reja qabul qilish.
 - Emojis va Renglar: Matn ichida emojilar ishlat 📚🎯💡⭐🚀 darsni zerikarli bo'lmasligi uchun. Har doim javob oxirida motivatsion xabar.
-
+- agar foydalanuvchi har safar boshqa fan yoki mavzuni tanlayversa biroz tandiq qil agar davom etaversa qattiq tanqid qil,
 ESLATMA: Qat'iy formatlar (#, :::, [daily study time]) ishlatma. FAQAT natural Markdown formatting (jadvallar, ro'yxatlar, bold, italics) ishlat va eng ideal ko'rinishni ber.`,
 
   KIDS: `Sen bolalar va o'smirlar uchun dunyodagi eng quvnoq, mehribon, sabrli va aqlli AI yordamchisan (Disney uslubidagi mentor)!
@@ -233,10 +233,10 @@ const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
 function corsHeaders(origin: string): Record<string, string> {
   const allow = ALLOWED_ORIGIN === "*" ? "*" : (origin === ALLOWED_ORIGIN ? origin : "null");
   return {
-    "Access-Control-Allow-Origin":  allow,
+    "Access-Control-Allow-Origin": allow,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
-    "Access-Control-Max-Age":       "86400",
+    "Access-Control-Max-Age": "86400",
   };
 }
 
@@ -273,7 +273,7 @@ async function* callGeminiStream(
   });
 
   const resp = await fetch(url, {
-    method:  "POST",
+    method: "POST",
     headers: { "Content-Type": "application/json" },
     body,
   });
@@ -283,9 +283,9 @@ async function* callGeminiStream(
     throw new Error(`Gemini HTTP ${resp.status}: ${errText}`);
   }
 
-  const reader  = resp.body!.getReader();
+  const reader = resp.body!.getReader();
   const decoder = new TextDecoder();
-  let   buffer  = "";
+  let buffer = "";
 
   while (true) {
     const { value, done } = await reader.read();
@@ -352,11 +352,11 @@ async function callOpenRouterNonStreaming(apiKey: string, model: string | undefi
 // ─────────────────────────────────────────────────────────────────────────────
 
 function buildStreamResponse(
-  apiKeys:    string[],
-  modelList:  string[],
+  apiKeys: string[],
+  modelList: string[],
   systemPrompt: string,
-  contents:   GeminiMessage[],
-  corsHdrs:   Record<string, string>,
+  contents: GeminiMessage[],
+  corsHdrs: Record<string, string>,
 ): Response {
   const listHash = hashList(modelList);
   const startKeyIdx = nextKeyIndex(listHash, apiKeys.length);
@@ -426,12 +426,12 @@ function buildStreamResponse(
   });
 
   return new Response(stream, {
-    status:  200,
+    status: 200,
     headers: {
       ...corsHdrs,
-      "Content-Type":  "text/event-stream; charset=utf-8",
+      "Content-Type": "text/event-stream; charset=utf-8",
       "Cache-Control": "no-cache",
-      "Connection":    "keep-alive",
+      "Connection": "keep-alive",
       "X-Accel-Buffering": "no",
     },
   });
@@ -442,12 +442,12 @@ function buildStreamResponse(
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function fetchNonStreaming(
-  apiKeys:   string[],
+  apiKeys: string[],
   modelList: string[],
   systemPrompt: string,
-  contents:  GeminiMessage[],
+  contents: GeminiMessage[],
 ): Promise<string> {
-  const listHash   = hashList(modelList);
+  const listHash = hashList(modelList);
   const startKeyIdx = nextKeyIndex(listHash, apiKeys.length);
 
   for (const model of modelList) {
@@ -461,7 +461,7 @@ async function fetchNonStreaming(
           `?key=${apiKeys[keyIdx]}`;
 
         const resp = await fetch(url, {
-          method:  "POST",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             system_instruction: { parts: [{ text: systemPrompt }] },
@@ -497,7 +497,7 @@ async function fetchNonStreaming(
 
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get("origin") ?? "*";
-  const hdrs   = corsHeaders(origin);
+  const hdrs = corsHeaders(origin);
 
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: hdrs });
@@ -519,10 +519,10 @@ Deno.serve(async (req: Request) => {
 
   // Body parsing and validation
   let body: {
-    prompt:     string;
-    history?:   Array<{ role: string; content: string }>;
-    mode?:      string;
-    stream?:    boolean;
+    prompt: string;
+    history?: Array<{ role: string; content: string }>;
+    mode?: string;
+    stream?: boolean;
     attachment?: { mimeType: string; data: string } | null;
   };
 
@@ -536,9 +536,9 @@ Deno.serve(async (req: Request) => {
 
   const {
     prompt,
-    history    = [],
-    mode       = "TUTOR",
-    stream     = true,
+    history = [],
+    mode = "TUTOR",
+    stream = true,
     attachment = null,
   } = body;
 
@@ -549,7 +549,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const systemPrompt = SYSTEM_PROMPTS[mode] ?? SYSTEM_PROMPTS["TUTOR"];
-  const modelList    = resolveModelList(mode);
+  const modelList = resolveModelList(mode);
 
   const isSlideWizard =
     prompt.includes("JSON formati quyidagi ko'rinishda bo'lsin") ||
@@ -557,7 +557,7 @@ Deno.serve(async (req: Request) => {
 
   const isFileReq =
     !isSlideWizard &&
-    (prompt.toLowerCase().includes("pdf")  ||
+    (prompt.toLowerCase().includes("pdf") ||
       prompt.toLowerCase().includes("fayl") ||
       prompt.toLowerCase().includes("word") ||
       prompt.toLowerCase().includes("slayd"));
@@ -569,7 +569,7 @@ Deno.serve(async (req: Request) => {
   const sanitizedHistory: GeminiMessage[] = history
     .filter(m => m.content?.trim())
     .map(m => ({
-      role:  m.role === "ai" ? "model" : "user",
+      role: m.role === "ai" ? "model" : "user",
       parts: [{ text: m.content }],
     }));
 
