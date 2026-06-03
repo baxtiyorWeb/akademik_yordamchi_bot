@@ -364,38 +364,108 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onConti
   const messageRef = useRef(null);
   const components = useMemo(() => mdComponents(isStreaming), [isStreaming]);
 
-  const handleSpeak = useCallback(() => {
-    if (!('speechSynthesis' in window)) return;
-    if (isSpeaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
+  const speakTimerRef = useRef(null);
+  const utterQueueRef = useRef([]);
+  const speakingRef = useRef(false);
+
+  // ── Mobile-safe TTS: jumlalarga bo'lib ketma-ket o'qish ──────────
+  const stopSpeech = useCallback(() => {
+    window.speechSynthesis?.cancel();
+    clearInterval(speakTimerRef.current);
+    utterQueueRef.current = [];
+    speakingRef.current = false;
+    setIsSpeaking(false);
+  }, []);
+
+  const speakNext = useCallback(() => {
+    const queue = utterQueueRef.current;
+    if (!queue.length || !speakingRef.current) {
+      stopSpeech();
       return;
     }
-    // Strip markdown for cleaner TTS
+    const text = queue.shift();
+    if (!text.trim()) { speakNext(); return; }
+
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'uz-UZ';
+    utter.rate = 0.9;
+    utter.pitch = 1;
+
+    // Prefer any available Uzbek voice, fallback to any available
+    const voices = window.speechSynthesis.getVoices();
+    const uzVoice = voices.find(v => v.lang.startsWith('uz')) ||
+                    voices.find(v => v.lang.startsWith('ru')) || // Russian closer to Uzbek phonetics
+                    voices.find(v => v.default);
+    if (uzVoice) utter.voice = uzVoice;
+
+    utter.onend = () => {
+      if (speakingRef.current) speakNext();
+    };
+    utter.onerror = (e) => {
+      if (e.error === 'interrupted') return; // user stopped
+      console.warn('TTS error:', e.error);
+      if (speakingRef.current) speakNext(); // skip broken chunk
+    };
+
+    window.speechSynthesis.speak(utter);
+  }, [stopSpeech]);
+
+  const handleSpeak = useCallback(() => {
+    if (!('speechSynthesis' in window)) return;
+    if (isSpeaking) { stopSpeech(); return; }
+
+    // Strip markdown for cleaner audio
     const plainText = content
+      .replace(/```[\s\S]*?```/g, ' kod bloki. ')
       .replace(/#{1,6}\s*/g, '')
       .replace(/\*\*(.+?)\*\*/g, '$1')
       .replace(/\*(.+?)\*/g, '$1')
-      .replace(/`{1,3}[\s\S]*?`{1,3}/g, '')
+      .replace(/`(.+?)`/g, '$1')
       .replace(/\[(.+?)\]\(.*?\)/g, '$1')
       .replace(/\|.*?\|/g, '')
       .replace(/[-_*~>#]/g, '')
+      .replace(/\n+/g, '. ')
       .replace(/\s+/g, ' ')
       .trim();
-    const utter = new SpeechSynthesisUtterance(plainText);
-    utter.lang = 'uz-UZ';
-    utter.rate = 0.95;
-    utter.pitch = 1;
-    utter.onend = () => setIsSpeaking(false);
-    utter.onerror = () => setIsSpeaking(false);
-    setIsSpeaking(true);
-    window.speechSynthesis.speak(utter);
-  }, [content, isSpeaking]);
 
-  // Stop speech when component unmounts or content changes
+    if (!plainText) return;
+
+    // Split into short sentences (≤200 chars) — prevents mobile timeout/pause
+    const sentences = plainText
+      .split(/(?<=[.!?؟])\s+/)
+      .flatMap(s => {
+        if (s.length <= 200) return [s];
+        return s.split(/[,;]/).map(p => p.trim()).filter(Boolean);
+      })
+      .filter(s => s.trim().length > 2);
+
+    if (!sentences.length) return;
+
+    window.speechSynthesis.cancel();
+    utterQueueRef.current = [...sentences];
+    speakingRef.current = true;
+    setIsSpeaking(true);
+
+    // Android Chrome auto-pauses after ~14s — resume every 5s
+    speakTimerRef.current = setInterval(() => {
+      if (window.speechSynthesis.paused && speakingRef.current) {
+        window.speechSynthesis.resume();
+      }
+    }, 5000);
+
+    // Wait for voices to load on first use (needed on mobile)
+    const startReading = () => speakNext();
+    if (window.speechSynthesis.getVoices().length === 0) {
+      window.speechSynthesis.onvoiceschanged = startReading;
+    } else {
+      startReading();
+    }
+  }, [content, isSpeaking, stopSpeech, speakNext]);
+
+  // Cleanup on unmount or content change
   useEffect(() => {
-    return () => { window.speechSynthesis?.cancel(); };
-  }, [content]);
+    return () => { stopSpeech(); };
+  }, [content, stopSpeech]);
 
   const processedContent = useMemo(() => {
     if (!content) return '';

@@ -5,7 +5,26 @@
   "env": {
     "NODE_ENV": "production"
   },
+  "headers": [
+    {
+      "source": "/OneSignalSDKWorker.js",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        }
+      ]
+    }
+  ],
   "rewrites": [
+    {
+      "source": "/OneSignalSDKWorker.js",
+      "destination": "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
