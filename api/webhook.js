@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
-
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://arstapreharjmqmqwuia.supabase.co';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY || '';
 
@@ -18,7 +17,7 @@ function verifySignature(headers, body) {
   const params = (body && body.params) || {};
 
   const amountStr = formatAmount(params.amount);
-  const ord = params.order_id ?? '';
+  const ord = (params.order_id ?? params.cheque_id ?? '').toString();
   const secret = process.env.WEBHOOK_SECRET || 'ts_pay_webhook_secret_556677';
 
   const expected = 'sha256=' + crypto
@@ -29,7 +28,18 @@ function verifySignature(headers, body) {
   try {
     const expBuf = Buffer.from(expected);
     const sigBuf = Buffer.from(sig);
-    if (expBuf.length !== sigBuf.length) return false;
+    if (expBuf.length !== sigBuf.length) {
+      // Try fallback signature with empty order_id if mismatch
+      const expectedFallback = 'sha256=' + crypto
+        .createHmac('sha256', secret)
+        .update(`:${amountStr}:${ts}`)
+        .digest('hex');
+      const fallbackBuf = Buffer.from(expectedFallback);
+      if (fallbackBuf.length === sigBuf.length && crypto.timingSafeEqual(fallbackBuf, sigBuf)) {
+        return true;
+      }
+      return false;
+    }
     return crypto.timingSafeEqual(expBuf, sigBuf);
   } catch (e) {
     return false;
@@ -37,7 +47,7 @@ function verifySignature(headers, body) {
 }
 
 export default async function handler(req, res) {
-  // CORS
+  // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Signature, X-Timestamp');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -54,7 +64,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ allow: false, reason: 'Invalid signature' });
   }
 
-  // Supabase client with service key to perform privileged DB ops
+  // Initialize Supabase Client
   if (!SUPABASE_SERVICE_KEY) {
     console.error('Missing SUPABASE_SERVICE_KEY env var');
     return res.status(500).json({ allow: false, reason: 'Server misconfiguration' });
@@ -65,15 +75,15 @@ export default async function handler(req, res) {
 
   try {
     if (method === 'checkPerform') {
-      const { order_id, amount } = params;
-      if (!order_id) return res.status(400).json({ allow: false, reason: 'order_id missing' });
+      const { order_id, cheque_id, amount } = params;
+      
+      // Look up payment/order in DB
+      let q = supabase.from('payments').select('*');
+      if (cheque_id) q = q.eq('cheque_id', cheque_id);
+      else if (order_id) q = q.eq('id', order_id);
+      else return res.status(400).json({ allow: false, reason: 'order_id or cheque_id missing' });
 
-      // find payment/order in DB
-      const { data: existing, error: fetchErr } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('id', order_id)
-        .maybeSingle();
+      const { data: existing, error: fetchErr } = await q.maybeSingle();
 
       if (fetchErr) {
         console.error('DB error on checkPerform:', fetchErr);
@@ -88,20 +98,18 @@ export default async function handler(req, res) {
         return res.status(200).json({ allow: false, reason: 'Summa mos emas' });
       }
 
-      // return additional info (idempotency helper)
       return res.status(200).json({ allow: true, additional: { db_id: existing.id } });
     }
 
     if (method === 'createTransaction') {
-      const { order_id, amount, cheque_id } = params;
-      if (!order_id) return res.status(400).json({ success: false, error: { code: -31001, message: 'order_id missing' } });
+      const { order_id, cheque_id, amount } = params;
+      
+      let q = supabase.from('payments').select('*');
+      if (cheque_id) q = q.eq('cheque_id', cheque_id);
+      else if (order_id) q = q.eq('id', order_id);
+      else return res.status(400).json({ success: false, error: { code: -31001, message: 'order_id or cheque_id missing' } });
 
-      // Idempotency: if transaction already exists for order_id, return it
-      const { data: existingTx, error: txErr } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('id', order_id)
-        .maybeSingle();
+      const { data: existingTx, error: txErr } = await q.maybeSingle();
 
       if (txErr) {
         console.error('DB error createTransaction:', txErr);
@@ -112,20 +120,21 @@ export default async function handler(req, res) {
         if (Number(existingTx.amount) !== Number(amount)) {
           return res.status(400).json({ error: { code: -31001, message: 'Summa mos emas' } });
         }
-        // update cheque_id if provided
+        // Update cheque_id if not present
         if (cheque_id && !existingTx.cheque_id) {
-          await supabase.from('payments').update({ cheque_id }).eq('id', order_id);
+          await supabase.from('payments').update({ cheque_id }).eq('id', existingTx.id);
         }
         return res.status(200).json({ success: true, transaction_id: existingTx.cheque_id || cheque_id || null });
       }
 
-      // Otherwise create a new payment record (merchant pre-create)
+      // Fallback: create pending record if not present
       const insertPayload = {
-        id: order_id,
         amount: Number(amount),
         cheque_id: cheque_id || null,
-        status: 'pending'
+        status: 'pending',
+        plan_name: 'Custom'
       };
+      if (order_id) insertPayload.id = order_id;
 
       const { data: inserted, error: insertErr } = await supabase.from('payments').insert([insertPayload]).select().maybeSingle();
       if (insertErr) {
@@ -137,9 +146,9 @@ export default async function handler(req, res) {
     }
 
     if (method === 'performTransaction') {
-      const { cheque_id, order_id, amount, transaction_id, additional } = params;
-      // Mark payment as completed
-      // First find the payment by cheque_id or order_id
+      const { cheque_id, order_id, amount, transaction_id } = params;
+      
+      // Look up payment/order
       let q = supabase.from('payments').select('*');
       if (cheque_id) q = q.eq('cheque_id', cheque_id);
       else if (order_id) q = q.eq('id', order_id);
@@ -152,13 +161,14 @@ export default async function handler(req, res) {
       }
 
       if (!pay) {
-        // Create a fallback record if not exists
-        const { data: created, error: createErr } = await supabase.from('payments').insert([{
+        // Fallback fallback: create a success record directly
+        const { error: createErr } = await supabase.from('payments').insert([{
           id: order_id || null,
           cheque_id: cheque_id || null,
           amount: Number(amount) || 0,
-          status: 'success'
-        }]).select().maybeSingle();
+          status: 'success',
+          plan_name: 'Custom'
+        }]);
         if (createErr) {
           console.error('Failed to create fallback payment:', createErr);
           return res.status(500).json({ success: false });
@@ -166,41 +176,64 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true });
       }
 
-      // validate amount
+      // If already success, return success
+      if (pay.status === 'success') {
+        return res.status(200).json({ success: true });
+      }
+
+      // Verify amount
       if (Number(pay.amount) !== Number(amount)) {
         console.warn('Amount mismatch on performTransaction', { db: pay.amount, incoming: amount });
-        // mark failed
         await supabase.from('payments').update({ status: 'failed' }).eq('id', pay.id);
         return res.status(400).json({ success: false });
       }
 
-      // Update payment record as success
-      const { error: updErr } = await supabase.from('payments').update({ status: 'success', transaction_id }).eq('id', pay.id);
+      // Mark payment as success
+      const { error: updErr } = await supabase
+        .from('payments')
+        .update({ status: 'success', updated_at: new Date().toISOString() })
+        .eq('id', pay.id);
+
       if (updErr) {
         console.error('Failed to mark payment as success:', updErr);
         return res.status(500).json({ success: false });
       }
 
-      // Add credits to user profile based on plan_name or amount
+      // Update user plan & credits
       if (pay.user_id) {
         try {
           const { data: profile } = await supabase.from('profiles').select('credits').eq('id', pay.user_id).single();
           let currentCredits = profile?.credits || 0;
-          
+
           let addedCredits = 0;
-          if (pay.plan_name && pay.plan_name.includes('Kredit')) {
-            addedCredits = parseInt(pay.plan_name.split(' ')[0]) || 0;
-          }
-          if (addedCredits === 0) {
-            addedCredits = Math.floor(Number(amount) / 50); // 1 credit = 50 UZS
-          }
+          const planLower = (pay.plan_name || '').toLowerCase();
           
-          if (addedCredits > 0) {
-            await supabase.from('profiles').update({ credits: currentCredits + addedCredits }).eq('id', pay.user_id);
+          if (planLower === 'starter') {
+            addedCredits = 500;
+          } else if (planLower === 'individual') {
+            addedCredits = 1500;
+          } else if (planLower === 'professional') {
+            addedCredits = 5000;
+          } else if (planLower.includes('kredit')) {
+            addedCredits = parseInt(planLower.split(' ')[0]) || 0;
           }
+
+          if (addedCredits === 0) {
+            addedCredits = Math.floor(Number(amount) / 50); // Fallback: 1 credit = 50 UZS
+          }
+
+          const planDisplayName = planLower.charAt(0).toUpperCase() + planLower.slice(1);
+          const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 1 month
+
+          await supabase.from('profiles').update({
+            credits: currentCredits + addedCredits,
+            plan: planDisplayName,
+            plan_expires_at: expiresAt
+          }).eq('id', pay.user_id);
+
+          console.log(`[PAYMENT_SUCCESS] Credited User ${pay.user_id}: +${addedCredits} credits, Plan: ${planDisplayName}`);
         } catch (err) {
-          console.error('Failed to update user credits:', err);
-          // Don't fail the webhook, payment was already recorded
+          console.error('Failed to update user profile:', err);
         }
       }
 

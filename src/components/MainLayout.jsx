@@ -51,7 +51,7 @@ function MainLayout({ children, session }) {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate('/auth');
+    navigate('/login');
   };
 
   const currentNavItem = navItems.find(i => i.path === location.pathname || (i.path === '/' && location.pathname === '/tutor'));

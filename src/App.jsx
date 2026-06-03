@@ -26,10 +26,39 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
+    const initSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          // Check if the loaded session token is valid by making a lightweight query
+          const { error } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          if (error && (error.status === 401 || error.message.includes('JWT') || error.message.includes('invalid') || error.code === 'PGRST301')) {
+            console.warn('Stale or invalid token detected, signing out to clear cache...');
+            await supabase.auth.signOut();
+            setSession(null);
+          } else {
+            setSession(session);
+          }
+        } else {
+          setSession(null);
+        }
+      } catch (err) {
+        console.error('Session initialization error:', err);
+        try {
+          await supabase.auth.signOut();
+        } catch (_) {}
+        setSession(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initSession();
 
     const {
       data: { subscription },
