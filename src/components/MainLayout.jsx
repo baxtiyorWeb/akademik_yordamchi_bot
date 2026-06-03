@@ -10,6 +10,8 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { supabase } from '../supabase';
 import { useNotebook } from '../hooks/useNotebook';
 import { useProfile } from '../hooks/useProfile';
+import OnboardingModal from './OnboardingModal';
+
 
 
 const IconGradient = () => (
@@ -36,7 +38,16 @@ function MainLayout({ children, session }) {
   const { t } = useTranslation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { entries } = useNotebook(session);
-  const { profile } = useProfile(session);
+  const { profile, updateMetadata, isUpdatingMetadata } = useProfile(session);
+  const showOnboarding = profile !== null && !profile.onboarding_completed;
+
+  const handleOnboardingComplete = async (onboardingData) => {
+    try {
+      await updateMetadata(onboardingData);
+    } catch (err) {
+      console.error('Onboarding update error:', err);
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -49,6 +60,11 @@ function MainLayout({ children, session }) {
   return (
     <div className="flex h-screen bg-[#fcfdfe] overflow-hidden font-sans text-slate-900">
       <IconGradient />
+      <OnboardingModal 
+        isOpen={showOnboarding} 
+        onComplete={handleOnboardingComplete}
+        isSaving={isUpdatingMetadata}
+      />
 
       <aside className="hidden md:flex w-64 bg-white border-r border-slate-100 flex-col z-30 shadow-sm">
         <Link to={'/'} className="p-6 border-b border-slate-50 flex items-center gap-3">

@@ -7,6 +7,7 @@ import {
   ChevronRight, BookOpen, Bot, Calendar, Presentation,
   Moon, Sun, Palette, Terminal, Paperclip, ArrowUp, LoaderCircle,
   Clock, CalendarDays, BarChart3, ClipboardCheck, Rocket,
+  Volume2, VolumeX,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -359,8 +360,42 @@ const InteractiveQuiz = React.memo(({ quizData }) => {
 /* ─── BotMessage ──────────────────────────────────────────────── */
 const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onContinue, onPlanSave, setPlanToSave, setConfirmSave }) => {
   const [unlockedSteps, setUnlockedSteps] = useState(1);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const messageRef = useRef(null);
   const components = useMemo(() => mdComponents(isStreaming), [isStreaming]);
+
+  const handleSpeak = useCallback(() => {
+    if (!('speechSynthesis' in window)) return;
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+    // Strip markdown for cleaner TTS
+    const plainText = content
+      .replace(/#{1,6}\s*/g, '')
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/\*(.+?)\*/g, '$1')
+      .replace(/`{1,3}[\s\S]*?`{1,3}/g, '')
+      .replace(/\[(.+?)\]\(.*?\)/g, '$1')
+      .replace(/\|.*?\|/g, '')
+      .replace(/[-_*~>#]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const utter = new SpeechSynthesisUtterance(plainText);
+    utter.lang = 'uz-UZ';
+    utter.rate = 0.95;
+    utter.pitch = 1;
+    utter.onend = () => setIsSpeaking(false);
+    utter.onerror = () => setIsSpeaking(false);
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utter);
+  }, [content, isSpeaking]);
+
+  // Stop speech when component unmounts or content changes
+  useEffect(() => {
+    return () => { window.speechSynthesis?.cancel(); };
+  }, [content]);
 
   const processedContent = useMemo(() => {
     if (!content) return '';
@@ -697,6 +732,36 @@ const BotMessage = React.memo(({ content, isStreaming, onSave, messages, onConti
             </div>
           )}
         </>
+      )}
+
+      {/* TTS Button */}
+      {!isStreaming && (
+        <div className="mt-3 flex items-center gap-2">
+          <button
+            onClick={handleSpeak}
+            title={isSpeaking ? "To'xtatish" : "Ovozli o'qish"}
+            aria-label={isSpeaking ? "Ovoz to'xtatish" : "Ovozli o'qish"}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all border ${
+              isSpeaking
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-200'
+                : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50'
+            }`}
+          >
+            {isSpeaking ? <VolumeX size={13} /> : <Volume2 size={13} />}
+            {isSpeaking ? "To'xtatish" : "Ovozli o'qish"}
+          </button>
+          {isSpeaking && (
+            <div className="flex gap-0.5 items-end h-3">
+              {[0, 0.1, 0.2].map((d, i) => (
+                <div
+                  key={i}
+                  className="w-0.5 bg-indigo-500 rounded-full"
+                  style={{ height: `${6 + i * 3}px`, animation: `blink 0.5s ${d}s ease-in-out infinite alternate` }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

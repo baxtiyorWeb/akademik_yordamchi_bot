@@ -68,6 +68,57 @@ const ChatInput = React.memo(({ onSend, isTyping }) => {
 
   const canSend = (text.trim().length > 0 || !!attachment) && !isTyping;
 
+  /* ── Speech-to-Text (STT) ── */
+  const recognitionRef = useRef(null);
+
+  const toggleVoice = useCallback(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error("Brauzeringiz ovozni qo'llab-quvvatlamaydi. Chrome yoki Edge ishlating.");
+      return;
+    }
+
+    if (voiceActive) {
+      recognitionRef.current?.stop();
+      setVoiceActive(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'uz-UZ';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognition.onstart = () => {
+      setVoiceActive(true);
+      toast.info('🎤 Gapiring...', { duration: 2000 });
+    };
+
+    recognition.onresult = (event) => {
+      let final = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) final += event.results[i][0].transcript;
+      }
+      if (final) {
+        setText(prev => {
+          const trimmed = prev.trimEnd();
+          return trimmed ? trimmed + ' ' + final : final;
+        });
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error('STT error:', event.error);
+      if (event.error !== 'no-speech') toast.error("Ovoz xatosi: " + event.error);
+      setVoiceActive(false);
+    };
+
+    recognition.onend = () => setVoiceActive(false);
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  }, [voiceActive]);
+
   return (
     <div className="w-full flex flex-col gap-2">
 
@@ -87,6 +138,23 @@ const ChatInput = React.memo(({ onSend, isTyping }) => {
         </div>
       )}
 
+      {/* Voice recording live indicator */}
+      {voiceActive && (
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-red-50 border border-red-100 rounded-xl">
+          <div className="flex gap-0.5 items-end h-4">
+            {[0.0, 0.1, 0.2, 0.15, 0.05].map((delay, i) => (
+              <div
+                key={i}
+                className="w-1 bg-red-400 rounded-full"
+                style={{ height: `${8 + (i % 3) * 4}px`, animation: `blink 0.6s ${delay}s ease-in-out infinite alternate` }}
+              />
+            ))}
+          </div>
+          <span className="text-[12px] font-semibold text-red-600 flex-1">Gapiring... (to'xtatish uchun tugmani bosing)</span>
+          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+        </div>
+      )}
+
       {/* Input container */}
       <div className="flex flex-col bg-white border border-slate-200 rounded-2xl transition-all duration-200 focus-within:border-indigo-300 focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.08)]">
 
@@ -98,7 +166,7 @@ const ChatInput = React.memo(({ onSend, isTyping }) => {
             onChange={e => setText(e.target.value)}
             onKeyDown={onKey}
             rows={1}
-            placeholder="Xabar yozing yoki rasm joylang..."
+            placeholder="Xabar yozing, rasm joylang yoki 🎤 bosing..."
             spellCheck={false}
             className="w-full bg-transparent border-none outline-none resize-none text-[15px] text-slate-800 placeholder:text-slate-400 leading-relaxed max-h-36 overflow-y-auto"
             style={{ fontFamily: 'inherit' }}
@@ -124,9 +192,12 @@ const ChatInput = React.memo(({ onSend, isTyping }) => {
               <Paperclip size={18} />
             </button>
             <button
-              onClick={() => setVoiceActive(v => !v)}
-              aria-label="Ovozli kiritish"
-              className={`p-2 rounded-xl transition-all ${voiceActive ? 'bg-red-50 text-red-500 animate-pulse' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+              onClick={toggleVoice}
+              aria-label={voiceActive ? "Ovozni to'xtatish" : "Ovozli yozish"}
+              title={voiceActive ? "To'xtatish" : "Mikrofon bilan yozish (STT)"}
+              className={`p-2 rounded-xl transition-all ${voiceActive
+                ? 'bg-red-100 text-red-500 ring-2 ring-red-200'
+                : 'text-slate-400 hover:text-indigo-500 hover:bg-indigo-50'}`}
             >
               <Mic size={18} />
             </button>
@@ -134,7 +205,7 @@ const ChatInput = React.memo(({ onSend, isTyping }) => {
             {/* AI badge — hidden on small screens */}
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 border border-indigo-100 rounded-lg ml-1">
               <Sparkles size={12} className="text-indigo-500" />
-              <span className="text-[11px] font-semibold text-indigo-600">Azure AI Voice</span>
+              <span className="text-[11px] font-semibold text-indigo-600">Ovvox AI</span>
             </div>
           </div>
 
