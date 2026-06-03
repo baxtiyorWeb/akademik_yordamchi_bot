@@ -93,11 +93,13 @@ export default async function handler(req, res) {
     const redirectUrl = redirect_url || `${appUrl}/payment-return`;
 
     console.log(`[CHECKOUT_INIT] User: ${userId}, Plan: ${plan}, Amount: ${amount} UZS`);
-    
+
     const tspayResponse = await fetch(tspayUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        // Haqiqiy brauzer sarlavhasini simulyatsiya qilamiz
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       },
       body: JSON.stringify({
         amount: amount,
@@ -123,7 +125,7 @@ export default async function handler(req, res) {
 
     if (tspayData.status === 'success' && tspayData.transaction?.payment_url) {
       const chequeId = tspayData.transaction.id;
-      
+
       // Update cheque_id in payment record if returned
       if (chequeId) {
         await supabase
