@@ -35,23 +35,23 @@ const C = {
 // ─── Static data ──────────────────────────────────────────────────────────────
 const NAV_LINKS = [
   { label: "Imkoniyatlar", href: "#features" },
-  { label: "Narxlar",      href: "#pricing" },
-  { label: "Yechimlar",   href: "#solutions" },
+  { label: "Narxlar", href: "#pricing" },
+  { label: "Yechimlar", href: "#solutions" },
 ];
 
 const STATS = [
-  { value: "50K+",   label: "Faol foydalanuvchi" },
-  { value: "2M+",    label: "Hal qilingan vazifa" },
-  { value: "99.9%",  label: "Tizim ishlashi" },
+  { value: "50K+", label: "Faol foydalanuvchi" },
+  { value: "2M+", label: "Hal qilingan vazifa" },
+  { value: "99.9%", label: "Tizim ishlashi" },
 ];
 
 const FEATURES = [
-  { Icon: Zap,          title: "Ko'p modal AI",       desc: "Matn, rasm va PDF fayllar bilan ishlash imkoni." },
-  { Icon: Brain,        title: "Chuqur tahlil",       desc: "Murakkab masalalarni bosqichma-bosqich tushuntirish." },
-  { Icon: Code2,        title: "Jonli ko'rinish",     desc: "Kod va matematik formulalar real vaqtda render bo'ladi." },
-  { Icon: BookOpen,     title: "Notebook LM",         desc: "Hujjatlaringizdan quiz va konspekt yarating." },
-  { Icon: Calculator,   title: "Math Center",         desc: "LaTeX editor va OCR bilan formulalar yechish." },
-  { Icon: CalendarCheck,title: "Reja boshqaruv",      desc: "AI bilan shaxsiy o'quv rejangizni saqlang." },
+  { Icon: Zap, title: "Ko'p modal AI", desc: "Matn, rasm va PDF fayllar bilan ishlash imkoni." },
+  { Icon: Brain, title: "Chuqur tahlil", desc: "Murakkab masalalarni bosqichma-bosqich tushuntirish." },
+  { Icon: Code2, title: "Jonli ko'rinish", desc: "Kod va matematik formulalar real vaqtda render bo'ladi." },
+  { Icon: BookOpen, title: "Notebook LM", desc: "Hujjatlaringizdan quiz va konspekt yarating." },
+  { Icon: Calculator, title: "Math Center", desc: "LaTeX editor va OCR bilan formulalar yechish." },
+  { Icon: CalendarCheck, title: "Reja boshqaruv", desc: "AI bilan shaxsiy o'quv rejangizni saqlang." },
 ];
 
 const MODES = [
@@ -88,12 +88,12 @@ const MODES = [
 ];
 
 const TOOLS = [
-  { Icon: FileText,        label: "Notebook LM" },
-  { Icon: FunctionSquare,  label: "Math Center" },
-  { Icon: Presentation,    label: "Slayd yaratish" },
-  { Icon: Upload,      label: "PDF eksport" },
-  { Icon: Mic,             label: "Audio AI" },
-  { Icon: Languages,       label: "Tarjima" },
+  { Icon: FileText, label: "Notebook LM" },
+  { Icon: FunctionSquare, label: "Math Center" },
+  { Icon: Presentation, label: "Slayd yaratish" },
+  { Icon: Upload, label: "PDF eksport" },
+  { Icon: Mic, label: "Audio AI" },
+  { Icon: Languages, label: "Tarjima" },
 ];
 
 const FOOTER_COLS = [
@@ -179,7 +179,7 @@ function HeroMockup() {
         ...s.itemsCenter, gap: 5, padding: "8px 12px",
         borderBottom: `1px solid ${C.border}`, background: C.bg,
       }}>
-        {["#f87171","#fbbf24","#34d399"].map(c => (
+        {["#f87171", "#fbbf24", "#34d399"].map(c => (
           <div key={c} style={{ width: 7, height: 7, borderRadius: "50%", background: c }} />
         ))}
         <span style={{ fontSize: 11, color: C.muted, fontWeight: 600, marginLeft: 6 }}>
@@ -195,10 +195,10 @@ function HeroMockup() {
           background: C.bg, display: "flex", flexDirection: "column", gap: 3,
         }}>
           {[
-            { label: "AI Tutor",    active: true },
+            { label: "AI Tutor", active: true },
             { label: "Notebook LM", active: false },
             { label: "Math Center", active: false },
-            { label: "Rejalar",     active: false },
+            { label: "Rejalar", active: false },
           ].map(({ label, active }) => (
             <div key={label} style={{
               padding: "4px 8px", borderRadius: 6, fontSize: 11, fontWeight: active ? 600 : 500,
@@ -228,9 +228,9 @@ function HeroMockup() {
               borderRadius: 6, overflow: "hidden", fontSize: 11,
             }}>
               {[
-                { bg: "#f1f5f9", fw: 600, color: C.muted, oy: "Oy",  mavzu: "Mavzular",           natija: "Natija" },
-                { bg: C.white,  fw: 400, color: C.slate,  oy: "1-oy", mavzu: "Asoslar, o'zgaruvchilar", natija: "Mini kalkulyator" },
-                { bg: C.bg,     fw: 400, color: C.slate,  oy: "2-oy", mavzu: "OOP, funksiyalar",   natija: "Loyiha" },
+                { bg: "#f1f5f9", fw: 600, color: C.muted, oy: "Oy", mavzu: "Mavzular", natija: "Natija" },
+                { bg: C.white, fw: 400, color: C.slate, oy: "1-oy", mavzu: "Asoslar, o'zgaruvchilar", natija: "Mini kalkulyator" },
+                { bg: C.bg, fw: 400, color: C.slate, oy: "2-oy", mavzu: "OOP, funksiyalar", natija: "Loyiha" },
               ].map((row, i) => (
                 <div key={i} style={{
                   display: "grid", gridTemplateColumns: "36px 1fr 1fr",
@@ -256,8 +256,8 @@ function HeroMockup() {
 export default function LandingPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [scrolled, setScrolled]   = useState(false);
-  const [menuOpen, setMenuOpen]   = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 40);
@@ -304,8 +304,8 @@ export default function LandingPage() {
               fontSize: 12, color: C.muted, fontWeight: 500,
               textDecoration: "none", transition: "color .15s",
             }}
-            onMouseEnter={e => e.currentTarget.style.color = C.slate}
-            onMouseLeave={e => e.currentTarget.style.color = C.muted}>
+              onMouseEnter={e => e.currentTarget.style.color = C.slate}
+              onMouseLeave={e => e.currentTarget.style.color = C.muted}>
               {l.label}
             </a>
           ))}
@@ -398,8 +398,8 @@ export default function LandingPage() {
             boxShadow: "0 2px 12px rgba(79,70,229,.25)",
             transition: "all .15s",
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = C.priDark; e.currentTarget.style.transform = "translateY(-1px)"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = C.pri; e.currentTarget.style.transform = "translateY(0)"; }}>
+            onMouseEnter={e => { e.currentTarget.style.background = C.priDark; e.currentTarget.style.transform = "translateY(-1px)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = C.pri; e.currentTarget.style.transform = "translateY(0)"; }}>
             Bepul boshlash <ArrowRight size={15} />
           </button>
 
@@ -411,8 +411,8 @@ export default function LandingPage() {
             border: `1px solid ${C.border}`, cursor: "pointer",
             transition: "all .15s",
           }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = C.pri; e.currentTarget.style.color = C.pri; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.slate; }}>
+            onMouseEnter={e => { e.currentTarget.style.borderColor = C.pri; e.currentTarget.style.color = C.pri; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.slate; }}>
             <SmileIcon size={15} /> Bolalar rejimi
           </button>
         </div>
@@ -444,7 +444,7 @@ export default function LandingPage() {
       </div>
 
       {/* ── FEATURES ── */}
-      <section id="features" style={{ ...sectionWrap, background: "#fcfcfc" , }} >
+      <section id="features" style={{ ...sectionWrap, background: "#fcfcfc", }} >
         <div style={sectionHead}>
           <div style={s.label}>Imkoniyatlar</div>
           <h2 style={s.sectionTitle}>Hamma narsa bir joyda</h2>
@@ -461,8 +461,8 @@ export default function LandingPage() {
               ...s.card, padding: "14px 12px",
               transition: "border-color .15s, box-shadow .15s",
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = C.priRing; e.currentTarget.style.boxShadow = `0 2px 12px rgba(79,70,229,.06)`; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = "none"; }}>
+              onMouseEnter={e => { e.currentTarget.style.borderColor = C.priRing; e.currentTarget.style.boxShadow = `0 2px 12px rgba(79,70,229,.06)`; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = "none"; }}>
               <div style={{
                 width: 30, height: 30, background: C.priLight, borderRadius: 7,
                 ...s.center, color: C.pri, marginBottom: 9,
@@ -495,8 +495,8 @@ export default function LandingPage() {
               borderRadius: 10,
               transition: "box-shadow .15s",
             }}
-            onMouseEnter={e => e.currentTarget.style.boxShadow = `0 2px 16px rgba(0,0,0,.06)`}
-            onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
+              onMouseEnter={e => e.currentTarget.style.boxShadow = `0 2px 16px rgba(0,0,0,.06)`}
+              onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: 4,
                 background: badgeBg, color: badgeColor,
@@ -533,8 +533,8 @@ export default function LandingPage() {
               fontSize: 12, fontWeight: 600, color: C.slate,
               cursor: "pointer", transition: "all .15s",
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = C.priLight; e.currentTarget.style.borderColor = C.priRing; e.currentTarget.style.color = C.pri; }}
-            onMouseLeave={e => { e.currentTarget.style.background = C.bg; e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.slate; }}>
+              onMouseEnter={e => { e.currentTarget.style.background = C.priLight; e.currentTarget.style.borderColor = C.priRing; e.currentTarget.style.color = C.pri; }}
+              onMouseLeave={e => { e.currentTarget.style.background = C.bg; e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.slate; }}>
               <Icon size={14} color={C.pri} strokeWidth={1.8} />
               {label}
             </div>
@@ -574,8 +574,8 @@ export default function LandingPage() {
               padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer",
               transition: "all .15s",
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#e0e7ff"; e.currentTarget.style.color = C.pri; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = C.slate; }}>
+              onMouseEnter={e => { e.currentTarget.style.background = "#e0e7ff"; e.currentTarget.style.color = C.pri; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = C.slate; }}>
               Bepul ro'yxatdan o'tish <ArrowRight size={14} />
             </button>
 
@@ -586,8 +586,8 @@ export default function LandingPage() {
               border: "1px solid #334155", cursor: "pointer",
               transition: "all .15s",
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "#6366f1"; e.currentTarget.style.color = "#a5b4fc"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#334155"; e.currentTarget.style.color = "#94a3b8"; }}>
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#6366f1"; e.currentTarget.style.color = "#a5b4fc"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#334155"; e.currentTarget.style.color = "#94a3b8"; }}>
               Kirish
             </button>
           </div>
@@ -632,8 +632,8 @@ export default function LandingPage() {
                   display: "block", fontSize: 12, color: C.muted,
                   marginBottom: 4, textDecoration: "none", transition: "color .15s",
                 }}
-                onMouseEnter={e => e.currentTarget.style.color = C.pri}
-                onMouseLeave={e => e.currentTarget.style.color = C.muted}>
+                  onMouseEnter={e => e.currentTarget.style.color = C.pri}
+                  onMouseLeave={e => e.currentTarget.style.color = C.muted}>
                   {link}
                 </a>
               ))}
