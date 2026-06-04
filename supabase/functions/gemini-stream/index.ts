@@ -4,28 +4,8 @@
 //  Deno / TypeScript — Supabase Edge Functions Runtime
 // =======================================================================
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 1. GLOBAL STATE & CIRCUIT BREAKER ARXITEKTURASI
-// ─────────────────────────────────────────────────────────────────────────────
-
-/** * Circuit Breaker Map: muayyan kalit va model kombinatsiyasining bloklanish muddati.
- * Kalit ko'rinishi: "PROVIDER:KEY_INDEX:MODEL" -> Epoch MS Expiry
- */
-
-declare const Deno: {
-
-  env: {
-
-    get(key: string): string | undefined;
-
-  };
-
-} | any;
-// =======================================================================
-//  supabase/functions/gemini-stream/index.ts
-//  Senior+ Resilient Multi-Provider Load Balancer & SSE Streamer
-//  Deno / TypeScript — Supabase Edge Functions Runtime
-// =======================================================================
+// @ts-ignore: Deno is provided globally by the Supabase Edge Runtime
+declare const Deno: any;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. GLOBAL STATE & CIRCUIT BREAKER ARXITEKTURASI
@@ -81,27 +61,47 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 7
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. ULTRA-RESILIENT MODELLAR MATRITSAI
+// 3. REJIMLAR VA MODELLAR MATRITSASI (MAPPING TO'G'RILANDI)
 // ─────────────────────────────────────────────────────────────────────────────
-const MODELS = {
-  LIGHT: [
-    { provider: "MISTRAL", model: "ministral-3b-2512" },
-    { provider: "GROQ", model: "llama-3.1-8b-instant" },
-    { provider: "GEMINI", model: "gemini-3.1-flash-lite" }
-  ],
-  MEDIUM: [
-    { provider: "MISTRAL", model: "open-mistral-nemo" },
-    { provider: "GROQ", model: "llama-3.3-70b-versatile" },
-    { provider: "GEMINI", model: "gemini-2.5-flash" }
-  ],
-  HEAVY: [
-    { provider: "MISTRAL", model: "mistral-small-2506" },
-    { provider: "GROQ", model: "meta-llama/llama-4-scout-17b-16e-instruct" },
-    { provider: "GEMINI", model: "gemini-2.5-pro" }
-  ]
-} as any;
-
 type Mode = "TUTOR" | "KIDS" | "IELTS_SPEAKING" | "IELTS_LISTENING" | "IELTS_READING" | "IELTS_WRITING" | "CODER";
+
+const MODELS: Record<Mode, Array<{ provider: "GEMINI" | "GROQ" | "MISTRAL"; model: string }>> = {
+  TUTOR: [
+    { provider: "GEMINI", model: "gemini-2.5-flash" },
+    { provider: "GROQ", model: "llama-3.3-70b-versatile" },
+    { provider: "MISTRAL", model: "open-mistral-nemo" }
+  ],
+  KIDS: [
+    { provider: "GEMINI", model: "gemini-3.1-flash-lite" },
+    { provider: "GROQ", model: "llama-3.1-8b-instant" },
+    { provider: "MISTRAL", model: "ministral-3b-2512" }
+  ],
+  IELTS_SPEAKING: [
+    { provider: "GEMINI", model: "gemini-2.5-flash" },
+    { provider: "GROQ", model: "llama-3.3-70b-versatile" },
+    { provider: "MISTRAL", model: "open-mistral-nemo" }
+  ],
+  IELTS_LISTENING: [
+    { provider: "GEMINI", model: "gemini-2.5-flash" },
+    { provider: "GROQ", model: "llama-3.3-70b-versatile" },
+    { provider: "MISTRAL", model: "open-mistral-nemo" }
+  ],
+  IELTS_READING: [
+    { provider: "GEMINI", model: "gemini-2.5-flash" },
+    { provider: "GROQ", model: "llama-3.3-70b-versatile" },
+    { provider: "MISTRAL", model: "open-mistral-nemo" }
+  ],
+  IELTS_WRITING: [
+    { provider: "GEMINI", model: "gemini-2.5-pro" },
+    { provider: "GROQ", model: "meta-llama/llama-4-scout-17b-16e-instruct" },
+    { provider: "MISTRAL", model: "mistral-small-2506" }
+  ],
+  CODER: [
+    { provider: "GEMINI", model: "gemini-2.5-pro" },
+    { provider: "GROQ", model: "meta-llama/llama-4-scout-17b-16e-instruct" },
+    { provider: "MISTRAL", model: "mistral-small-2506" }
+  ]
+};
 
 const SYSTEM_PROMPTS: Record<Mode, string> = {
   TUTOR: `Sen "Ovvox Ai Professional Education Tutor" san. Maqsading: foydalanuvchini individual mentorlik asosida o'qitish, murakkab mavzularni sodda qilish va ularni chuqurroq tushuntirishga yordam berish. Har bir javob professional, motivatsion, tushunarli va qiziqarli bo'lishi shart.`,
@@ -146,7 +146,7 @@ async function* streamGemini(apiKey: string, model: string, system: string, mess
       contents,
       generation_config: { temperature: 0.75 }
     })
-  }, 8000); // Gemini ulanishi uchun 8 soniya limit
+  }, 8000);
 
   const reader = response.body!.getReader();
   const decoder = new TextDecoder();
@@ -184,7 +184,7 @@ async function* streamOpenAICompatible(baseUrl: string, apiKey: string, model: s
       "Authorization": `Bearer ${apiKey}`
     },
     body: JSON.stringify({ model, messages: openAIMessages, temperature: 0.75, stream: true })
-  }, 8000); // Groq/Mistral uchun 8 soniya limit
+  }, 8000);
 
   const reader = response.body!.getReader();
   const decoder = new TextDecoder();
@@ -233,8 +233,10 @@ Deno.serve(async (req: Request) => {
 
     if (!prompt) return new Response(JSON.stringify({ error: "`prompt` is required." }), { status: 400, headers: corsHeaders });
 
-    const systemPrompt = SYSTEM_PROMPTS[mode as Mode] ?? SYSTEM_PROMPTS["TUTOR"];
-    const activeModelPool = [...(MODELS[mode as Mode] || MODELS["TUTOR"])];
+    // Rejim xavfsiz tanlab olinadi
+    const selectedMode = (mode && MODELS[mode as Mode]) ? (mode as Mode) : "TUTOR";
+    const systemPrompt = SYSTEM_PROMPTS[selectedMode];
+    const activeModelPool = [...MODELS[selectedMode]];
 
     const neutralHistory: NeutralMessage[] = history.map((h: any) => ({
       role: h.role === "ai" || h.role === "assistant" ? "assistant" : "user",
