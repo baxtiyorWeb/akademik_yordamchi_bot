@@ -672,9 +672,9 @@ Siz ushbu o'quv rejasining AI repetitorisiz. Foydalanuvchiga o'rganishda yordam 
   }, [quizAnswers, quizData]);
 
   return (
-    <div className="flex flex-col flex-1 h-full overflow-hidden bg-slate-50 text-slate-800 w-full">
+    <div className="flex flex-col flex-1 h-full overflow-hidden bg-gradient-to-b from-[#fcfdfe] to-[#f0f4ff] text-slate-800 w-full">
       {/* Workspace Header */}
-      <header className="px-4 sm:px-6 py-4 border-b border-slate-200 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
+      <header className="px-4 sm:px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-indigo-600 to-purple-600 flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div className="flex items-center gap-3">
           <button
             onClick={onClose}
@@ -1463,11 +1463,10 @@ const StudyPlansPage = ({ session }) => {
               <button
                 key={t}
                 onClick={() => setTypeFilter(t)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                  typeFilter === t
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-                }`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${typeFilter === t
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                  }`}
               >
                 {t === 'all' ? 'Barchasi' : planTypeLabel(t)}
               </button>
@@ -1562,12 +1561,11 @@ const StudyPlansPage = ({ session }) => {
                   className="group bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl p-4 hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-50 transition-all duration-200 cursor-pointer active:scale-[0.995] flex flex-col h-[220px] relative overflow-hidden"
                 >
                   <div className="flex justify-between items-start">
-                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider ${
-                      color === 'indigo' ? 'bg-indigo-50 text-indigo-600' :
+                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider ${color === 'indigo' ? 'bg-indigo-50 text-indigo-600' :
                       color === 'emerald' ? 'bg-emerald-50 text-emerald-600' :
-                      color === 'purple' ? 'bg-purple-50 text-purple-600' :
-                      'bg-amber-50 text-amber-600'
-                    }`}>
+                        color === 'purple' ? 'bg-purple-50 text-purple-600' :
+                          'bg-amber-50 text-amber-600'
+                      }`}>
                       {planTypeLabel(plan.plan_type)}
                     </span>
                     <span className="text-[11px] text-slate-400">{dateStr}</span>
