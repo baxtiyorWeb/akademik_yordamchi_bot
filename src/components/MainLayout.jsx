@@ -26,10 +26,9 @@ const IconGradient = () => (
 const navItems = [
   { icon: <LayoutGrid size={18} strokeWidth={2} />, labelKey: 'dashboard', path: '/profile' },
   { icon: <MessageSquare size={18} strokeWidth={2} />, labelKey: 'ai_assistant', path: '/tutor' },
-  { icon: <BookOpen size={18} strokeWidth={2} />, labelKey: 'notebook_lm', path: '/notebook' },
   // { icon: <Award size={18} strokeWidth={2} />, labelKey: 'ielts_prep', path: '/ielts' },
   { icon: <AppWindow size={18} strokeWidth={2} />, labelKey: 'math_center', path: '/math' },
-  { icon: <Calendar size={18} strokeWidth={2} />, label: 'Rejalar', path: '/plans' },
+  { icon: <Calendar size={18} strokeWidth={2} />, labelKey: 'plan_center', path: '/plans' },
 ];
 
 function MainLayout({ children, session }) {
@@ -60,8 +59,8 @@ function MainLayout({ children, session }) {
   return (
     <div className="flex h-screen bg-[#fcfdfe] overflow-hidden font-sans text-slate-900">
       <IconGradient />
-      <OnboardingModal 
-        isOpen={showOnboarding} 
+      <OnboardingModal
+        isOpen={showOnboarding}
         onComplete={handleOnboardingComplete}
         isSaving={isUpdatingMetadata}
       />

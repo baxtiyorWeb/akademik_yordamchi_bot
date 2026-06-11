@@ -66,7 +66,8 @@ const resources = {
       "footer_twitter": "Twitter",
       "footer_github": "GitHub",
       "footer_operational": "Barcha tizimlar ishlamoqda",
-      "footer_rights": "© 2026 Ovvox Ai. Barcha huquqlar himoyalangan."
+      "footer_rights": "© 2026 Ovvox Ai. Barcha huquqlar himoyalangan.",
+      "plan_center": "Rejalar"
     }
   },
   ru: {
@@ -132,7 +133,8 @@ const resources = {
       "footer_twitter": "Twitter",
       "footer_github": "GitHub",
       "footer_operational": "Все системы работают",
-      "footer_rights": "© 2026 Ovvox Ai. Все права защищены."
+      "footer_rights": "© 2026 Ovvox Ai. Все права защищены.",
+      "plan_center": "Планы"
     }
   },
   en: {
@@ -198,7 +200,8 @@ const resources = {
       "footer_twitter": "Twitter",
       "footer_github": "GitHub",
       "footer_operational": "All systems operational",
-      "footer_rights": "© 2026 Ovvox Ai. All rights reserved."
+      "footer_rights": "© 2026 Ovvox Ai. All rights reserved.",
+      "plan_center": "Plans"
     }
   }
 };
