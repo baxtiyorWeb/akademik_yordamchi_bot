@@ -1393,7 +1393,7 @@ const StudyPlansPage = ({ session }) => {
   const planTypeColor = (t) => ({ daily: 'emerald', weekly: 'indigo', monthly: 'purple', custom: 'amber' }[t] || 'slate');
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#fcfdfe] overflow-hidden w-full">
+    <div className="flex-1 flex flex-col h-full bg-gradient-to-b from-[#fcfdfe] to-[#f0f4ff] overflow-hidden w-[100dvw]">
       <CreatePlanModal
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
@@ -1402,7 +1402,7 @@ const StudyPlansPage = ({ session }) => {
       />
 
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-white border-b border-slate-100 px-4 md:px-8 py-5">
+      <div className="sticky top-0 z-30 bg-gradient-to-r from-indigo-600 to-purple-600 border-b border-slate-100 px-4 md:px-8 py-5">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">O'quv Rejalarim</h1>
@@ -1412,13 +1412,13 @@ const StudyPlansPage = ({ session }) => {
           <div className="flex w-full sm:w-auto gap-3">
             <button
               onClick={loadPlans}
-              className="flex items-center gap-2 px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl transition-all active:scale-95"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl text-xs font-semibold transition-all active:scale-95"
             >
               <RefreshCcw size={14} /> Yangilash
             </button>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 bg-slate-900 hover:bg-black active:scale-95 transition-all text-white px-5 py-2.5 rounded-xl font-medium whitespace-nowrap text-xs shadow-sm"
+              className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2.5 rounded-xl font-medium whitespace-nowrap text-xs shadow-sm"
             >
               <Plus size={15} /> Yangi Reja
             </button>
@@ -1559,7 +1559,7 @@ const StudyPlansPage = ({ session }) => {
                 <article
                   key={plan.id}
                   onClick={() => setActivePlanId(plan.id)}
-                  className="group bg-white border border-slate-100 rounded-xl p-4 hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-50 transition-all duration-200 cursor-pointer active:scale-[0.995] flex flex-col h-[220px] relative overflow-hidden"
+                  className="group bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl p-4 hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-50 transition-all duration-200 cursor-pointer active:scale-[0.995] flex flex-col h-[220px] relative overflow-hidden"
                 >
                   <div className="flex justify-between items-start">
                     <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider ${
