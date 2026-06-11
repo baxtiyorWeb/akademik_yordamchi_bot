@@ -70,7 +70,22 @@ export const useMessages = (session) => {
 
       let currentSessionId = activeSessionId;
 
-      // 1. Agar joriy sessiya bo'lmasa, yangi 'tutor_sessions' yaratamiz
+      // 1a. Agar localStorage'dan session_id bor bo'lsa, haqiqatan mavjudligini tekshiramiz
+      if (currentSessionId) {
+        const { data: existingSession } = await supabase
+          .from('tutor_sessions')
+          .select('id')
+          .eq('id', currentSessionId)
+          .single();
+        
+        if (!existingSession) {
+          // Eski/o'chirilgan sessiya — tozalaymiz
+          currentSessionId = null;
+          changeSession(null);
+        }
+      }
+
+      // 1b. Agar joriy sessiya bo'lmasa, yangi 'tutor_sessions' yaratamiz
       if (!currentSessionId) {
         const title = hidden ? 'Masterclass Plan' : (visibleText ?? userText).substring(0, 30) + '...';
         const { data: newSession, error: sessionErr } = await supabase
