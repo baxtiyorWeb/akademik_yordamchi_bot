@@ -801,7 +801,7 @@ Siz ushbu o'quv rejasining AI repetitorisiz. Foydalanuvchiga o'rganishda yordam 
             )}
           </div>
 
-          {/* Left Pane Content scroll container */}
+          {/* Left Pane Content scroll contSainer */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6">
             {activeTab === 'roadmap' && (
               <div className="space-y-4">
@@ -1013,7 +1013,7 @@ Siz ushbu o'quv rejasining AI repetitorisiz. Foydalanuvchiga o'rganishda yordam 
                 </div>
 
                 {/* Pre-defined chips & Input */}
-                <div className="p-3 sm:p-4 border-t border-slate-200 bg-white shrink-0">
+                <div className="p-3 sm:p-4 h-dvh border-t border-slate-200 bg-white ">
                   <div className="flex gap-1.5 overflow-x-auto pb-3 scrollbar-none shrink-0">
                     {[
                       { text: "Topshiriq ber", prompt: "Menga o'quv rejasidagi hozirgi darajam bo'yicha kichik amaliy topshiriq bering." },
